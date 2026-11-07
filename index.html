@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ContractFlow - Hệ Thống Quản Lý & Quy Trình Hợp Đồng</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js CDN for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
+
+  <!-- Header & Top Navigation -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <i data-lucide="shield-check" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="text-xl font-bold tracking-tight text-slate-900">Contract<span class="text-blue-600">Flow</span></h1>
+              <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-blue-200">Mini App</span>
+            </div>
+            <p class="text-xs text-slate-500 hidden sm:block">Quản lý quy trình & theo dõi hợp đồng đầu ngày</p>
+          </div>
+        </div>
+
+        <!-- Date & Quick Actions -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          
+          <!-- Live Date Badge -->
+          <div class="hidden md:flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600">
+            <i data-lucide="calendar" class="w-4 h-4 text-blue-600"></i>
+            <span id="currentDateDisplay">Hôm nay: ...</span>
+          </div>
+
+          <!-- Backup / Restore Dropdown / Actions -->
+          <button id="btnExportData" title="Sao lưu dữ liệu ra file JSON" class="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition border border-slate-200 text-xs font-medium flex items-center space-x-1.5">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span class="hidden lg:inline">Sao lưu</span>
+          </button>
+
+          <label title="Phục hồi dữ liệu từ file JSON" class="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition border border-slate-200 text-xs font-medium flex items-center space-x-1.5 cursor-pointer">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            <span class="hidden lg:inline">Nhập file</span>
+            <input type="file" id="importFileInput" accept=".json" class="hidden">
+          </label>
+
+          <button id="btnResetDemo" title="Tải lại dữ liệu mẫu" class="p-2 text-slate-600 hover:text-amber-600 hover:bg-slate-100 rounded-lg transition border border-slate-200 text-xs font-medium flex items-center space-x-1.5">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <span class="hidden lg:inline">Dữ liệu mẫu</span>
+          </button>
+
+          <!-- Primary Add Button -->
+          <button id="btnOpenNewContractModal" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm shadow-blue-600/30 flex items-center space-x-2 transition active:scale-95 text-sm">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Thêm hợp đồng</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- DAILY BRIEFING BANNER: HỢP ĐỒNG CẦN XỬ LÝ ĐẦU NGÀY -->
+    <section id="dailyBriefingSection" class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden border border-slate-800">
+      <!-- Background pattern decor -->
+      <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute right-40 top-0 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+      <div class="relative z-10 space-y-4">
+        
+        <!-- Header of Morning Briefing -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <i data-lucide="sunrise" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h2 class="text-lg font-bold tracking-tight text-white">Bàn Giao & Điểm Tin Đầu Ngày</h2>
+                <span id="briefingBadge" class="bg-amber-400/20 text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-400/30 font-semibold">Đang tính toán...</span>
+              </div>
+              <p class="text-xs text-slate-300">Tổng hợp các hợp đồng cần bạn giải quyết, ký duyệt hoặc đôn đốc hôm nay</p>
+            </div>
+          </div>
+
+          <button id="toggleBriefingListBtn" class="text-xs text-blue-300 hover:text-white flex items-center space-x-1 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-lg border border-white/10 transition self-start sm:self-auto">
+            <span id="toggleBriefingText">Thu gọn danh sách</span>
+            <i data-lucide="chevron-up" id="toggleBriefingIcon" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          
+          <!-- Card: Cần xử lý hôm nay -->
+          <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:border-amber-400/50 transition cursor-pointer" onclick="filterByUrgency('today')">
+            <div class="flex items-center justify-between text-amber-400 mb-1">
+              <span class="text-xs font-semibold uppercase tracking-wider">Hôm nay</span>
+              <i data-lucide="bell-ring" class="w-4 h-4"></i>
+            </div>
+            <div class="text-2xl font-bold text-white" id="countDueToday">0</div>
+            <div class="text-[11px] text-slate-300 mt-0.5">Hợp đồng cần xử lý</div>
+          </div>
+
+          <!-- Card: Quá hạn xử lý -->
+          <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:border-rose-400/50 transition cursor-pointer" onclick="filterByUrgency('overdue')">
+            <div class="flex items-center justify-between text-rose-400 mb-1">
+              <span class="text-xs font-semibold uppercase tracking-wider">Quá hạn</span>
+              <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+            </div>
+            <div class="text-2xl font-bold text-white" id="countOverdue">0</div>
+            <div class="text-[11px] text-slate-300 mt-0.5">Cần giải quyết gấp</div>
+          </div>
+
+          <!-- Card: Sắp hết hạn trong 30 ngày -->
+          <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:border-yellow-400/50 transition cursor-pointer" onclick="filterByUrgency('expiring')">
+            <div class="flex items-center justify-between text-yellow-300 mb-1">
+              <span class="text-xs font-semibold uppercase tracking-wider">Sắp hết hạn</span>
+              <i data-lucide="clock-alert" class="w-4 h-4"></i>
+            </div>
+            <div class="text-2xl font-bold text-white" id="countExpiringSoon">0</div>
+            <div class="text-[11px] text-slate-300 mt-0.5">Trong vòng 30 ngày</div>
+          </div>
+
+          <!-- Card: Đang thực hiện / Tổng giá trị -->
+          <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:border-blue-400/50 transition cursor-pointer" onclick="filterByUrgency('active')">
+            <div class="flex items-center justify-between text-blue-300 mb-1">
+              <span class="text-xs font-semibold uppercase tracking-wider">Đang vận hành</span>
+              <i data-lucide="layers" class="w-4 h-4"></i>
+            </div>
+            <div class="text-2xl font-bold text-white" id="countActiveTotal">0</div>
+            <div class="text-[11px] text-slate-300 mt-0.5" id="totalActiveValueFormatted">0 ₫</div>
+          </div>
+
+        </div>
+
+        <!-- Action Items List for Today (Expandable) -->
+        <div id="briefingItemsContainer" class="space-y-2 pt-2 border-t border-white/10">
+          <div class="text-xs font-semibold text-slate-300 flex items-center space-x-1.5 mb-2">
+            <i data-lucide="list-checks" class="w-4 h-4 text-amber-400"></i>
+            <span>Nhiệm vụ cụ thể cần ưu tiên thực hiện trong ngày:</span>
+          </div>
+
+          <div id="briefingActionList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+            <!-- Dynamic items rendered by app.js -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Navigation Tabs & View Switches -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-3 no-print">
+      
+      <!-- Tab Buttons -->
+      <div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto pb-1 md:pb-0">
+        <button id="tabPipeline" class="tab-btn active px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition bg-blue-600 text-white shadow-sm shadow-blue-600/30">
+          <i data-lucide="kanban" class="w-4 h-4"></i>
+          <span>Quy trình (Pipeline)</span>
+        </button>
+
+        <button id="tabTable" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
+          <i data-lucide="table" class="w-4 h-4"></i>
+          <span>Danh sách chi tiết</span>
+          <span id="badgeActiveCount" class="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold ml-1">0</span>
+        </button>
+
+        <button id="tabArchive" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
+          <i data-lucide="archive" class="w-4 h-4"></i>
+          <span>Kho lưu trữ</span>
+          <span id="badgeArchiveCount" class="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-bold ml-1">0</span>
+        </button>
+
+        <button id="tabAnalytics" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span>Thống kê & Báo cáo</span>
+        </button>
+      </div>
+
+      <!-- Search & Filters Toolbar -->
+      <div class="flex items-center space-x-2 sm:space-x-3 w-full md:w-auto">
+        
+        <!-- Search Input -->
+        <div class="relative flex-1 md:w-64">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="searchInput" placeholder="Tìm kiếm hợp đồng, đối tác..." class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+
+        <!-- Filter Contract Type -->
+        <select id="filterTypeSelect" class="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="all">Tất cả loại HĐ</option>
+          <!-- Options populated from CONTRACT_TYPES -->
+        </select>
+
+        <!-- Filter Priority -->
+        <select id="filterPrioritySelect" class="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 hidden sm:block">
+          <option value="all">Mọi mức độ</option>
+          <option value="high">Ưu tiên cao</option>
+          <option value="medium">Trung bình</option>
+          <option value="low">Thấp</option>
+        </select>
+
+      </div>
+    </div>
+
+    <!-- VIEW 1: KANBAN PIPELINE PROCESS -->
+    <section id="viewPipeline" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto pb-4">
+        
+        <!-- Stage 1: Soạn thảo / Mới tạo -->
+        <div class="bg-slate-100/80 rounded-xl p-3 border border-slate-200 flex flex-col">
+          <div class="flex items-center justify-between pb-3 mb-2 border-b border-slate-200">
+            <div class="flex items-center space-x-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-slate-500"></div>
+              <h3 class="font-bold text-sm text-slate-800">1. Soạn thảo</h3>
+            </div>
+            <span class="column-count bg-white text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full border border-slate-200" id="countStage-draft">0</span>
+          </div>
+          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-draft" data-stage="draft">
+            <!-- Cards rendered here -->
+          </div>
+        </div>
+
+        <!-- Stage 2: Chờ thẩm định / Duyệt -->
+        <div class="bg-amber-50/50 rounded-xl p-3 border border-amber-200/60 flex flex-col">
+          <div class="flex items-center justify-between pb-3 mb-2 border-b border-amber-200/60">
+            <div class="flex items-center space-x-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+              <h3 class="font-bold text-sm text-amber-900">2. Chờ duyệt</h3>
+            </div>
+            <span class="column-count bg-white text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full border border-amber-200" id="countStage-review">0</span>
+          </div>
+          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-review" data-stage="review">
+            <!-- Cards rendered here -->
+          </div>
+        </div>
+
+        <!-- Stage 3: Chờ ký kết -->
+        <div class="bg-purple-50/50 rounded-xl p-3 border border-purple-200/60 flex flex-col">
+          <div class="flex items-center justify-between pb-3 mb-2 border-b border-purple-200/60">
+            <div class="flex items-center space-x-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+              <h3 class="font-bold text-sm text-purple-900">3. Chờ ký kết</h3>
+            </div>
+            <span class="column-count bg-white text-purple-700 text-xs font-bold px-2 py-0.5 rounded-full border border-purple-200" id="countStage-signing">0</span>
+          </div>
+          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-signing" data-stage="signing">
+            <!-- Cards rendered here -->
+          </div>
+        </div>
+
+        <!-- Stage 4: Đang thực hiện -->
+        <div class="bg-blue-50/50 rounded-xl p-3 border border-blue-200/60 flex flex-col">
+          <div class="flex items-center justify-between pb-3 mb-2 border-b border-blue-200/60">
+            <div class="flex items-center space-x-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+              <h3 class="font-bold text-sm text-blue-900">4. Đang thực hiện</h3>
+            </div>
+            <span class="column-count bg-white text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full border border-blue-200" id="countStage-active">0</span>
+          </div>
+          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-active" data-stage="active">
+            <!-- Cards rendered here -->
+          </div>
+        </div>
+
+        <!-- Stage 5: Sắp hết hạn / Cần gia hạn -->
+        <div class="bg-rose-50/50 rounded-xl p-3 border border-rose-200/60 flex flex-col">
+          <div class="flex items-center justify-between pb-3 mb-2 border-b border-rose-200/60">
+            <div class="flex items-center space-x-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+              <h3 class="font-bold text-sm text-rose-900">5. Sắp hết hạn</h3>
+            </div>
+            <span class="column-count bg-white text-rose-700 text-xs font-bold px-2 py-0.5 rounded-full border border-rose-200" id="countStage-expiring">0</span>
+          </div>
+          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-expiring" data-stage="expiring">
+            <!-- Cards rendered here -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- VIEW 2: TABLE VIEW -->
+    <section id="viewTable" class="hidden space-y-4">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-700">
+            <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">Mã HĐ</th>
+                <th class="px-4 py-3">Tên hợp đồng & Đối tác</th>
+                <th class="px-4 py-3">Loại HĐ</th>
+                <th class="px-4 py-3">Giá trị (VNĐ)</th>
+                <th class="px-4 py-3">Giai đoạn</th>
+                <th class="px-4 py-3">Việc cần xử lý</th>
+                <th class="px-4 py-3">Hạn chót</th>
+                <th class="px-4 py-3 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="tableContractsBody" class="divide-y divide-slate-200">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+        <div id="tableEmptyState" class="hidden p-12 text-center text-slate-500">
+          <i data-lucide="inbox" class="w-12 h-12 mx-auto text-slate-300 mb-2"></i>
+          <p class="font-medium">Không tìm thấy hợp đồng nào phù hợp với bộ lọc</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: ARCHIVE VIEW (LƯU TRỮ HỢP ĐỒNG ĐÃ XỬ LÝ XONG) -->
+    <section id="viewArchive" class="hidden space-y-4">
+      <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+            <i data-lucide="archive" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-emerald-950">Kho Lưu Trữ Hợp Đồng Đã Xử Lý Xong</h3>
+            <p class="text-xs text-emerald-800">Nơi tập trung các hợp đồng đã thanh lý, hoàn tất hoặc hết hiệu lực để tra cứu lịch sử khi cần</p>
+          </div>
+        </div>
+        <button id="btnExportArchive" class="bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+          <span>Xuất danh sách lưu trữ</span>
+        </button>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-700">
+            <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">Mã HĐ</th>
+                <th class="px-4 py-3">Tên hợp đồng & Đối tác</th>
+                <th class="px-4 py-3">Loại HĐ</th>
+                <th class="px-4 py-3">Giá trị hợp đồng</th>
+                <th class="px-4 py-3">Thời gian hiệu lực</th>
+                <th class="px-4 py-3">Ngày hoàn tất</th>
+                <th class="px-4 py-3">Người phụ trách</th>
+                <th class="px-4 py-3 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="tableArchiveBody" class="divide-y divide-slate-200">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+        <div id="archiveEmptyState" class="hidden p-12 text-center text-slate-500">
+          <i data-lucide="archive" class="w-12 h-12 mx-auto text-slate-300 mb-2"></i>
+          <p class="font-medium">Chưa có hợp đồng nào được lưu trữ</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: ANALYTICS & CHARTS -->
+    <section id="viewAnalytics" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Chart 1: Phân bổ hợp đồng theo giai đoạn -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center space-x-2">
+            <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i>
+            <span>Tỷ lệ hợp đồng theo giai đoạn quy trình</span>
+          </h3>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="chartStageDistribution"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Giá trị hợp đồng theo loại hình -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center space-x-2">
+            <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-600"></i>
+            <span>Tổng giá trị theo loại hợp đồng (VNĐ)</span>
+          </h3>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="chartTypeValue"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: TẠO MỚI / CHỈNH SỬA HỢP ĐỒNG -->
+  <div id="contractModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="modal-backdrop fixed inset-0"></div>
+    <div class="bg-white rounded-2xl max-w-2xl w-full mx-4 overflow-hidden shadow-2xl z-10 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+            <i data-lucide="file-plus" class="w-5 h-5"></i>
+          </div>
+          <h3 id="modalContractTitle" class="text-base font-bold text-slate-800">Thêm Hợp Đồng Mới</h3>
+        </div>
+        <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-200/50">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Form) -->
+      <form id="contractForm" class="p-6 overflow-y-auto space-y-4 flex-1">
+        <input type="hidden" id="formContractIdHidden">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Mã HĐ -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Mã hợp đồng *</label>
+            <input type="text" id="formContractCode" required placeholder="VD: HD-2026-008" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+
+          <!-- Loại HĐ -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Loại hợp đồng *</label>
+            <select id="formContractType" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <!-- Options populated dynamically -->
+            </select>
+          </div>
+
+          <!-- Mức độ ưu tiên -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Độ ưu tiên *</label>
+            <select id="formPriority" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="high">🔴 Cao (Cần xử lý gấp)</option>
+              <option value="medium" selected>🟡 Trung bình</option>
+              <option value="low">🟢 Bình thường</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tên Hợp Đồng -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tên / Tiêu đề hợp đồng *</label>
+          <input type="text" id="formContractTitle" required placeholder="VD: Hợp đồng cung cấp dịch vụ máy chủ đám mây" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <!-- Thông tin Đối Tác -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Đối tác / Khách hàng *</label>
+            <input type="text" id="formPartner" required placeholder="Tên công ty / cá nhân đối tác" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Liên hệ đối tác (SĐT/Email)</label>
+            <input type="text" id="formPartnerContact" placeholder="VD: 0988.xxx.xxx - lienhe@congty.vn" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Giá trị & Người phụ trách -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Giá trị hợp đồng (VNĐ) *</label>
+            <input type="number" id="formValue" required min="0" step="100000" placeholder="VD: 150000000" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Người phụ trách nội bộ</label>
+            <input type="text" id="formAssignee" placeholder="VD: Nguyễn Văn Dũng" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Thời gian hiệu lực -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Ngày bắt đầu / Ký kết</label>
+            <input type="date" id="formStartDate" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Ngày hết hạn hợp đồng</label>
+            <input type="date" id="formEndDate" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Giai đoạn quy trình -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Giai đoạn quy trình hiện tại *</label>
+          <select id="formStage" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="draft">1. Soạn thảo / Mới tạo</option>
+            <option value="review">2. Chờ thẩm định / Duyệt</option>
+            <option value="signing">3. Chờ ký kết</option>
+            <option value="active">4. Đang thực hiện</option>
+            <option value="expiring">5. Sắp hết hạn</option>
+            <option value="completed">6. Đã hoàn tất / Lưu trữ</option>
+          </select>
+        </div>
+
+        <!-- VÙNG ĐẶC BIỆT: NHIỆM VỤ ĐẦU NGÀY -->
+        <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 space-y-3">
+          <div class="flex items-center space-x-2 text-amber-900 font-bold text-xs uppercase tracking-wide">
+            <i data-lucide="bell" class="w-4 h-4 text-amber-600"></i>
+            <span>Thiết lập lịch nhắc việc & Nhiệm vụ tiếp theo</span>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-amber-900 mb-1">Ngày cần xử lý tiếp theo</label>
+              <input type="date" id="formNextActionDate" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-amber-900 mb-1">Nội dung việc cần làm đầu ngày</label>
+              <input type="text" id="formNextActionNote" placeholder="VD: Gửi dự thảo cho giám đốc ký, đối chiếu công nợ..." class="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tài liệu đính kèm (giả lập) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tên file tài liệu / link đính kèm (phân cách bằng dấu phẩy)</label>
+          <input type="text" id="formDocuments" placeholder="VD: HD_ChinhThuc.pdf, BangGia_v1.xlsx" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+      </form>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end space-x-3">
+        <button type="button" id="btnCancelModal" class="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 rounded-lg transition">Hủy bỏ</button>
+        <button type="submit" form="contractForm" class="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm shadow-blue-600/30 flex items-center space-x-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span id="btnSubmitFormText">Lưu hợp đồng</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: XEM CHI TIẾT HỢP ĐỒNG (DETAIL VIEW & TIMELINE) -->
+  <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="modal-backdrop fixed inset-0"></div>
+    <div class="bg-white rounded-2xl max-w-3xl w-full mx-4 overflow-hidden shadow-2xl z-10 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Detail Header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center space-x-3">
+          <span id="detailBadgeStage" class="px-3 py-1 rounded-full text-xs font-bold border">Trạng thái</span>
+          <span id="detailContractCode" class="text-xs font-mono font-bold text-slate-500">HD-XXXX</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="btnPrintContract" title="In phiếu tóm tắt" class="text-slate-500 hover:text-slate-800 p-2 rounded-lg hover:bg-slate-200/60 transition">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+          </button>
+          <button id="btnCloseDetailModal" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-200/60">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Detail Body -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-sm text-slate-700">
+        
+        <!-- Header Info -->
+        <div>
+          <h2 id="detailTitle" class="text-xl font-bold text-slate-900 leading-snug">Tên Hợp Đồng</h2>
+          <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+            <span class="flex items-center space-x-1">
+              <i data-lucide="building" class="w-3.5 h-3.5 text-slate-400"></i>
+              <strong id="detailPartner" class="text-slate-700">Đối tác ABC</strong>
+            </span>
+            <span>•</span>
+            <span id="detailPartnerContact" class="text-slate-600">090.xxxx</span>
+            <span>•</span>
+            <span class="flex items-center space-x-1">
+              <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Phụ trách: <strong id="detailAssignee" class="text-slate-700">Nguyễn Văn A</strong></span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 3 Highlight Boxes -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="bg-blue-50/70 p-3 rounded-xl border border-blue-100">
+            <div class="text-xs text-blue-700 font-semibold mb-1">Giá trị hợp đồng</div>
+            <div id="detailValue" class="text-lg font-bold text-blue-900">0 ₫</div>
+            <div id="detailType" class="text-[11px] text-blue-600">Loại: Dịch vụ</div>
+          </div>
+          <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200">
+            <div class="text-xs text-slate-600 font-semibold mb-1">Thời hạn hiệu lực</div>
+            <div id="detailDateRange" class="text-xs font-semibold text-slate-800">01/01/2026 - 01/01/2027</div>
+            <div id="detailRemainingDays" class="text-[11px] text-slate-500 mt-1">Còn lại: ... ngày</div>
+          </div>
+          <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200">
+            <div class="text-xs text-amber-800 font-semibold mb-1">Nhiệm vụ tiếp theo</div>
+            <div id="detailNextDueDate" class="text-xs font-bold text-amber-900">Hạn: Chưa đặt</div>
+            <div id="detailNextNote" class="text-[11px] text-amber-800 line-clamp-2 mt-0.5">Chưa có ghi chú</div>
+          </div>
+        </div>
+
+        <!-- Quick Stage Mover (Chuyển giai đoạn nhanh) -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Chuyển nhanh trạng thái quy trình</div>
+          <div class="flex flex-wrap gap-2" id="detailStageButtons">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Documents Attached -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center space-x-1.5">
+            <i data-lucide="paperclip" class="w-4 h-4"></i>
+            <span>Tài liệu & Hồ sơ đính kèm</span>
+          </h4>
+          <div id="detailDocumentsList" class="flex flex-wrap gap-2">
+            <!-- Documents rendered here -->
+          </div>
+        </div>
+
+        <!-- Activity Timeline & Notes -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center space-x-1.5">
+              <i data-lucide="history" class="w-4 h-4"></i>
+              <span>Nhật ký tiến độ & Ghi chú xử lý</span>
+            </h4>
+          </div>
+
+          <!-- Add Note Form -->
+          <div class="flex items-center space-x-2">
+            <input type="text" id="inputNewNote" placeholder="Thêm ghi chú tiến độ mới..." class="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <button id="btnAddNote" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>Ghi nhận</span>
+            </button>
+          </div>
+
+          <!-- Timeline items -->
+          <div id="detailTimelineList" class="space-y-2 border-l-2 border-slate-200 ml-2 pl-4 py-1">
+            <!-- Timeline items rendered here -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Detail Footer -->
+      <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <button id="btnDeleteDetail" class="text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-3 py-2 rounded-lg font-semibold transition flex items-center space-x-1">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Xóa hợp đồng</span>
+        </button>
+
+        <div class="flex items-center space-x-2">
+          <button id="btnArchiveToggleDetail" class="text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-lg font-semibold transition flex items-center space-x-1">
+            <i data-lucide="archive" class="w-4 h-4"></i>
+            <span id="btnArchiveToggleText">Chuyển vào kho lưu trữ</span>
+          </button>
+
+          <button id="btnEditDetail" class="text-xs text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold transition flex items-center space-x-1 shadow-sm">
+            <i data-lucide="edit-3" class="w-4 h-4"></i>
+            <span>Chỉnh sửa thông tin</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- Load Data and Application Logic -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
