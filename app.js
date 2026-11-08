@@ -11,6 +11,26 @@ let currentDetailContractId = null;
 let stageDistributionChart = null;
 let typeValueChart = null;
 
+// Firebase Cloud Realtime Sync State
+const STORAGE_KEY = "contractflow_contracts_data_v1";
+const CLOUD_CONFIG_KEY = "contractflow_firebase_config_v1";
+
+// Cấu hình Firebase mặc định của bạn (Tự động kết nối cho mọi thiết bị mở link)
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDmudnl8ER6oDfh182OZGQ87m48SZnfuIg",
+  authDomain: "contractflow-fdacf.firebaseapp.com",
+  projectId: "contractflow-fdacf",
+  storageBucket: "contractflow-fdacf.firebasestorage.app",
+  messagingSenderId: "563886365693",
+  appId: "1:563886365693:web:f597485a65d872d6795794",
+  measurementId: "G-75V0XHF531"
+};
+
+let firebaseApp = null;
+let firestoreDb = null;
+let unsubscribeFirestoreListener = null;
+let isCloudSyncActive = false;
+
 // Helpers: Date & Currency Formatting
 function getTodayDateString() {
   const now = new Date();
@@ -47,9 +67,7 @@ function getDaysRemaining(endDateStr) {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-// LocalStorage Persistence
-const STORAGE_KEY = "contractflow_contracts_data_v1";
-
+// LocalStorage & Cloud Persistence
 function loadContracts() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -65,13 +83,205 @@ function loadContracts() {
   }
 }
 
-function saveContracts() {
+function saveContracts(itemToSync = null) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
+    if (isCloudSyncActive && firestoreDb) {
+      if (itemToSync) {
+        syncContractToCloud(itemToSync);
+      }
+    }
   } catch (err) {
     console.error("Lỗi ghi dữ liệu vào LocalStorage:", err);
     showToast("Không thể lưu dữ liệu vào trình duyệt!", "error");
   }
+}
+
+// Firebase Cloud Sync Functions
+function parseFirebaseConfigInput(rawInput) {
+  if (!rawInput || typeof rawInput !== "string") return null;
+  let str = rawInput.trim();
+  if (str.includes("firebaseConfig")) {
+    const firstBrace = str.indexOf("{");
+    const lastBrace = str.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      str = str.substring(firstBrace, lastBrace + 1);
+    }
+  }
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    try {
+      const sanitized = new Function(`return (${str});`)();
+      if (sanitized && typeof sanitized === "object") return sanitized;
+    } catch (err2) {
+      console.error("Lỗi parse cấu hình Firebase:", err2);
+    }
+  }
+  return null;
+}
+
+function initFirebaseSync(config, silent = false) {
+  try {
+    if (!window.firebase) {
+      if (!silent) showToast("Không tìm thấy thư viện Firebase!", "error");
+      return false;
+    }
+
+    if (firebase.apps && firebase.apps.length > 0) {
+      firebase.app().delete();
+    }
+
+    firebaseApp = firebase.initializeApp(config);
+    firestoreDb = firebase.firestore();
+    isCloudSyncActive = true;
+
+    localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(config));
+    updateCloudStatusUI(true, config.projectId);
+    setupFirestoreListener();
+
+    if (!silent) {
+      showToast("Đã kết nối Firebase Cloud thành công!");
+    }
+    return true;
+  } catch (err) {
+    console.error("Lỗi khởi tạo Firebase:", err);
+    isCloudSyncActive = false;
+    updateCloudStatusUI(false);
+    if (!silent) showToast("Không thể kết nối Firebase: " + err.message, "error");
+    return false;
+  }
+}
+
+function setupFirestoreListener() {
+  if (!firestoreDb) return;
+  if (unsubscribeFirestoreListener) {
+    unsubscribeFirestoreListener();
+  }
+
+  unsubscribeFirestoreListener = firestoreDb.collection("contracts").onSnapshot((snapshot) => {
+    if (snapshot.empty) {
+      return;
+    }
+
+    const cloudContracts = [];
+    snapshot.forEach(doc => {
+      cloudContracts.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    contracts = cloudContracts;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
+    } catch (e) {}
+    renderAllViews();
+    updateCloudStatusUI(true, firebaseApp.options.projectId);
+  }, (err) => {
+    console.error("Lỗi Firestore listener:", err);
+    showToast("Lỗi đồng bộ Firebase (hãy kiểm tra quyền truy cập Rules)", "error");
+  });
+}
+
+function syncContractToCloud(contract) {
+  if (!isCloudSyncActive || !firestoreDb || !contract || !contract.id) return;
+  firestoreDb.collection("contracts").doc(contract.id).set(contract, { merge: true })
+    .catch(err => {
+      console.error("Lỗi lưu hợp đồng lên Cloud:", err);
+    });
+}
+
+function deleteContractFromCloud(contractId) {
+  if (!isCloudSyncActive || !firestoreDb || !contractId) return;
+  firestoreDb.collection("contracts").doc(contractId).delete()
+    .catch(err => {
+      console.error("Lỗi xóa hợp đồng trên Cloud:", err);
+    });
+}
+
+async function pushAllLocalToCloud() {
+  if (!isCloudSyncActive || !firestoreDb) {
+    showToast("Chưa kết nối Cloud!", "warn");
+    return;
+  }
+  try {
+    const batch = firestoreDb.batch();
+    contracts.forEach(c => {
+      const docRef = firestoreDb.collection("contracts").doc(c.id);
+      batch.set(docRef, c, { merge: true });
+    });
+    await batch.commit();
+    showToast(`Đã đẩy thành công ${contracts.length} hợp đồng lên Cloud!`);
+  } catch (err) {
+    showToast("Lỗi đẩy dữ liệu lên Cloud: " + err.message, "error");
+  }
+}
+
+async function pullAllCloudToLocal() {
+  if (!isCloudSyncActive || !firestoreDb) {
+    showToast("Chưa kết nối Cloud!", "warn");
+    return;
+  }
+  try {
+    const snapshot = await firestoreDb.collection("contracts").get();
+    if (snapshot.empty) {
+      showToast("Kho Cloud hiện chưa có hợp đồng nào!", "warn");
+      return;
+    }
+    const cloudContracts = [];
+    snapshot.forEach(doc => {
+      cloudContracts.push({ id: doc.id, ...doc.data() });
+    });
+    contracts = cloudContracts;
+    saveContracts();
+    renderAllViews();
+    showToast(`Đã tải về thành công ${contracts.length} hợp đồng từ Cloud!`);
+  } catch (err) {
+    showToast("Lỗi tải từ Cloud: " + err.message, "error");
+  }
+}
+
+function disconnectCloud() {
+  if (unsubscribeFirestoreListener) {
+    unsubscribeFirestoreListener();
+    unsubscribeFirestoreListener = null;
+  }
+  isCloudSyncActive = false;
+  firestoreDb = null;
+  firebaseApp = null;
+  localStorage.removeItem(CLOUD_CONFIG_KEY);
+  updateCloudStatusUI(false);
+  showToast("Đã ngắt kết nối Cloud. Ứng dụng quay lại chế độ lưu nội bộ.", "warn");
+}
+
+function updateCloudStatusUI(active, projectId = "") {
+  const dot = document.getElementById("cloudStatusDot");
+  const text = document.getElementById("cloudStatusText");
+  const modalIcon = document.getElementById("cloudModalStatusIcon");
+  const modalTitle = document.getElementById("cloudModalStatusTitle");
+  const modalDesc = document.getElementById("cloudModalStatusDesc");
+  const btnDisconnect = document.getElementById("btnDisconnectCloud");
+  const syncActions = document.getElementById("cloudSyncActions");
+
+  if (active) {
+    if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+    if (text) text.textContent = "Đang đồng bộ Cloud";
+    if (modalIcon) modalIcon.className = "w-3.5 h-3.5 rounded-full bg-emerald-500";
+    if (modalTitle) modalTitle.textContent = "Đã Kết Nối Firebase Cloud (Realtime)";
+    if (modalDesc) modalDesc.textContent = `Dự án: ${projectId || "Firebase"}. Dữ liệu đang đồng bộ tự động tức thì trên mọi thiết bị.`;
+    if (btnDisconnect) btnDisconnect.classList.remove("hidden");
+    if (syncActions) syncActions.classList.remove("hidden");
+  } else {
+    if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-slate-400";
+    if (text) text.textContent = "Chưa đồng bộ";
+    if (modalIcon) modalIcon.className = "w-3.5 h-3.5 rounded-full bg-slate-400";
+    if (modalTitle) modalTitle.textContent = "Chưa Kết Nối Đám Mây";
+    if (modalDesc) modalDesc.textContent = "Dữ liệu hiện đang lưu cục bộ trên trình duyệt máy này.";
+    if (btnDisconnect) btnDisconnect.classList.add("hidden");
+    if (syncActions) syncActions.classList.add("hidden");
+  }
+  lucide.createIcons();
 }
 
 // Toast Notifications
@@ -266,7 +476,7 @@ function quickCompleteAction(contractId) {
     item.nextActionNote = "";
   }
 
-  saveContracts();
+  saveContracts(item);
   renderAllViews();
   showToast(`Đã cập nhật tiến độ hợp đồng ${item.id}`);
 }
@@ -468,7 +678,7 @@ function changeStage(contractId, targetStage) {
     content: `Chuyển trạng thái từ [${prevStageName}] sang [${newStageName}]`
   });
 
-  saveContracts();
+  saveContracts(c);
   renderAllViews();
   if (currentDetailContractId === contractId) {
     populateDetailModal(c);
@@ -648,7 +858,7 @@ function archiveContract(contractId, shouldArchive) {
     showToast(`Đã khôi phục hợp đồng ${c.id} về trạng thái Đang thực hiện.`);
   }
 
-  saveContracts();
+  saveContracts(c);
   renderAllViews();
   if (currentDetailContractId === contractId) {
     populateDetailModal(c);
@@ -883,7 +1093,7 @@ function addNoteToCurrentContract() {
   });
 
   input.value = "";
-  saveContracts();
+  saveContracts(c);
   populateDetailModal(c);
   showToast("Đã ghi nhận thêm một cập nhật tiến độ!");
 }
@@ -981,6 +1191,7 @@ function handleContractFormSubmit(e) {
       if (!existing.completedAt) existing.completedAt = getTodayDateString();
     }
 
+    saveContracts(existing);
     showToast(`Đã cập nhật thông tin hợp đồng ${code}`);
   } else {
     // Create new
@@ -1008,10 +1219,10 @@ function handleContractFormSubmit(e) {
     };
 
     contracts.unshift(newContract);
+    saveContracts(newContract);
     showToast(`Đã thêm thành công hợp đồng ${code}`);
   }
 
-  saveContracts();
   closeContractModal();
   renderAllViews();
 }
@@ -1024,6 +1235,7 @@ function deleteContract(contractId) {
 
   contracts = contracts.filter(c => c.id !== contractId);
   saveContracts();
+  deleteContractFromCloud(contractId);
   closeDetailModal();
   renderAllViews();
   showToast(`Đã xóa hợp đồng ${contractId}`, "warn");
@@ -1224,6 +1436,99 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnPrintContract").addEventListener("click", () => {
     window.print();
   });
+
+  // Cloud Sync Modal Events
+  const cloudModal = document.getElementById("cloudSyncModal");
+  const inputFirebaseConfig = document.getElementById("inputFirebaseConfig");
+
+  document.getElementById("btnOpenCloudSyncModal").addEventListener("click", () => {
+    // Populate textarea if config exists
+    const savedConfig = localStorage.getItem(CLOUD_CONFIG_KEY);
+    const configToDisplay = savedConfig ? JSON.parse(savedConfig) : DEFAULT_FIREBASE_CONFIG;
+    inputFirebaseConfig.value = JSON.stringify(configToDisplay, null, 2);
+    cloudModal.classList.remove("hidden");
+    lucide.createIcons();
+  });
+
+  document.getElementById("btnCloseCloudSyncModal").addEventListener("click", () => {
+    cloudModal.classList.add("hidden");
+  });
+
+  document.getElementById("btnCancelCloudSyncModal").addEventListener("click", () => {
+    cloudModal.classList.add("hidden");
+  });
+
+  document.getElementById("btnSaveCloudConfig").addEventListener("click", () => {
+    const rawVal = inputFirebaseConfig.value;
+    const configObj = parseFirebaseConfigInput(rawVal);
+    if (!configObj || !configObj.projectId) {
+      showToast("Cấu hình Firebase không hợp lệ! Vui lòng kiểm tra lại.", "error");
+      return;
+    }
+
+    const success = initFirebaseSync(configObj);
+    if (success) {
+      cloudModal.classList.add("hidden");
+      // Ask user if they want to upload local contracts to the new cloud
+      if (contracts.length > 0) {
+        setTimeout(() => {
+          if (confirm(`Bạn có muốn đẩy toàn bộ ${contracts.length} hợp đồng hiện tại lên Cloud Firebase để đồng bộ sang các máy khác không?`)) {
+            pushAllLocalToCloud();
+          }
+        }, 500);
+      }
+    }
+  });
+
+  document.getElementById("btnDisconnectCloud").addEventListener("click", () => {
+    if (confirm("Bạn có chắc muốn ngắt kết nối Cloud? Ứng dụng sẽ quay về chế độ lưu trữ nội bộ trên máy này.")) {
+      disconnectCloud();
+      inputFirebaseConfig.value = "";
+    }
+  });
+
+  document.getElementById("btnPushLocalToCloud").addEventListener("click", () => {
+    pushAllLocalToCloud();
+  });
+
+  document.getElementById("btnPullCloudToLocal").addEventListener("click", () => {
+    if (confirm("Hành động này sẽ tải toàn bộ hợp đồng trên Cloud về máy và thay thế dữ liệu hiện tại. Bạn có muốn tiếp tục?")) {
+      pullAllCloudToLocal();
+    }
+  });
+
+  // Toggle Firebase Guide Accordion
+  const btnToggleGuide = document.getElementById("btnToggleFirebaseGuide");
+  const guideContent = document.getElementById("firebaseGuideContent");
+  const guideChevron = document.getElementById("guideChevron");
+
+  btnToggleGuide.addEventListener("click", () => {
+    const isHidden = guideContent.classList.contains("hidden");
+    if (isHidden) {
+      guideContent.classList.remove("hidden");
+      guideChevron.setAttribute("data-lucide", "chevron-up");
+    } else {
+      guideContent.classList.add("hidden");
+      guideChevron.setAttribute("data-lucide", "chevron-down");
+    }
+    lucide.createIcons();
+  });
+
+  // Check and auto-connect Cloud if config exists
+  const autoConfigStr = localStorage.getItem(CLOUD_CONFIG_KEY);
+  if (autoConfigStr) {
+    try {
+      const autoConfig = JSON.parse(autoConfigStr);
+      if (autoConfig && autoConfig.projectId) {
+        initFirebaseSync(autoConfig, true);
+      }
+    } catch (e) {
+      initFirebaseSync(DEFAULT_FIREBASE_CONFIG, true);
+    }
+  } else {
+    // Tự động kết nối luôn cấu hình mặc định của bạn
+    initFirebaseSync(DEFAULT_FIREBASE_CONFIG, true);
+  }
 
   // Initial Render
   renderAllViews();

@@ -1,63 +1,59 @@
-# ContractFlow - Mini App Quản Lý Quy Trình Hợp Đồng 📑
+# ContractFlow - Quản Lý Hợp Đồng Xây Dựng 🏗️
 
-Ứng dụng web nhỏ gọn, hiện đại, **chạy ngay trực tiếp bằng trình duyệt mà không cần cài đặt môi trường phức tạp (Zero-setup)**. Toàn bộ dữ liệu được lưu an toàn trên máy tính của bạn (LocalStorage) và hỗ trợ Sao lưu / Phục hồi file JSON.
-
----
-
-## 🌟 Tính Năng Nổi Bật
-
-### 1. ☀️ Điểm Tin & Bàn Giao Đầu Ngày (Morning Action Center)
-- **Tự động quét và cảnh báo vào đầu ngày làm việc**:
-  - 🔴 **Hợp đồng quá hạn xử lý**: Cần giải quyết gấp để tránh vi phạm tiến độ/phạt hợp đồng.
-  - 🟡 **Hợp đồng cần xử lý hôm nay**: Danh sách việc cần làm cụ thể (gặp đối tác, trình ký, đối soát công nợ, đôn đốc...).
-  - 🕒 **Hợp đồng sắp hết hạn (30 ngày tới)**: Đưa ra cảnh báo để kịp thời đàm phán gia hạn hoặc thanh lý.
-- Có nút **"Đã xử lý"** nhanh để cập nhật ngay tiến độ và hẹn ngày cho bước tiếp theo.
-
-### 2. 📊 Bảng Quy Trình Xử Lý Hợp Đồng (Kanban Pipeline)
-Trực quan hóa đường đi của từng hợp đồng qua 5 giai đoạn:
-1. **Soạn thảo / Mới tạo** *(Draft)*
-2. **Chờ thẩm định / Duyệt** *(Reviewing)*
-3. **Chờ ký kết** *(Signing)*
-4. **Đang thực hiện** *(Active)*
-5. **Sắp hết hạn** *(Expiring)*
-- Hỗ trợ chuyển bước tiến độ nhanh chỉ với 1 click.
-- Thẻ hợp đồng thể hiện rõ đối tác, giá trị tiền tệ, người phụ trách và nhiệm vụ đầu ngày.
-
-### 3. 📋 Danh Sách Chi Tiết & Bộ Lọc Nâng Cao (Table View)
-- Bảng tổng hợp toàn bộ các hợp đồng đang vận hành.
-- Tìm kiếm nhanh tức thì theo: Tên hợp đồng, Mã HĐ, Tên đối tác, Người phụ trách.
-- Lọc theo loại hợp đồng (Dịch vụ, Mua sắm, Thuê tài sản, Hợp tác, Lao động...) và độ ưu tiên.
-
-### 4. 📦 Kho Lưu Trữ Hợp Đồng Đã Xử Lý Xong (Archive)
-- Khi hợp đồng hoàn tất hoặc đã thanh lý nghiệm thu, hợp đồng được chuyển vào **Kho Lưu Trữ**.
-- Tách biệt khỏi quy trình đang chạy để tránh rối mắt nhưng vẫn giữ nguyên đầy đủ lịch sử hoạt động, hồ sơ tài liệu.
-- Cho phép tra cứu bất kỳ lúc nào hoặc bấm **Khôi phục** nếu phát sinh công việc cần mở lại.
-
-### 5. 📈 Báo Cáo & Biểu Đồ Thống Kê (Analytics)
-- Biểu đồ tròn tỷ lệ hợp đồng theo từng giai đoạn.
-- Biểu đồ cột tổng giá trị tài chính theo từng nhóm loại hợp đồng.
-
-### 6. 📝 Chi Tiết Hợp Đồng & Nhật Ký Hoạt Động (Timeline Activity Log)
-- Xem toàn diện thông tin hợp đồng, hạn thanh toán, hồ sơ đính kèm.
-- Ghi nhận nhật ký tiến độ: mỗi khi trao đổi với đối tác hay kế toán, bạn có thể thêm nhanh 1 dòng nhật ký.
-- Nút **In phiếu tóm tắt** tiện dụng khi cần in giấy hoặc lưu PDF.
-
-### 7. 💾 An Toàn Dữ Liệu (Backup & Restore)
-- Lưu tự động vào trình duyệt.
-- Nút **Sao lưu**: Tải về file `.json` để lưu trữ hoặc chuyển sang máy khác.
-- Nút **Nhập file**: Phục hồi lại dữ liệu từ file backup bất cứ khi nào.
-- Nút **Dữ liệu mẫu**: Nạp lại bộ hợp đồng mẫu để trải nghiệm thử.
+Hệ thống quản lý tiến trình luân chuyển hồ sơ, lịch biểu công việc và hợp đồng chuyên biệt cho ngành **Xây Dựng / Công Trình**.
 
 ---
 
-## 🚀 Hướng Dẫn Sử Dụng
+## 🌟 Các Tính Năng Đã Được Cập Nhật Từ Bản Canvas:
 
-### Cách 1: Mở trực tiếp
-1. Vào thư mục dự án: `d:\JOB\Dũng VibeCode - Antigravity\ContractFlow`
-2. Nhấp đúp chuột vào file **`index.html`** để mở ngay bằng trình duyệt (Google Chrome, Microsoft Edge, Firefox, Cốc Cốc, Brave...).
+### 1. 🏗️ Quy Trình Chuẩn Luân Chuyển Hồ Sơ Xây Dựng (Kanban 5 Cột)
+Trực quan hóa vòng đời hợp đồng xây dựng qua 5 giai đoạn:
+1. **1. Soạn thảo & Thẩm định kỹ thuật** *(DRAFT)*
+2. **2. Đang trình ký nội bộ** *(INTERNAL_REVIEW - Ban Giám Đốc, Kế toán trưởng, Kỹ sư)*
+3. **3. Bị trả về / Yêu cầu sửa đổi** *(REJECTED - Yêu cầu bổ sung bảo lãnh, sửa đơn giá)*
+4. **4. Đã chuyển đối tác / CĐT ký** *(SENT_TO_PARTNER)*
+5. **5. Đã ký đủ - Đang hiệu lực thi công** *(SIGNED_ACTIVE)*
+- Kéo thả thẻ (Drag & Drop) mượt mà giữa các cột.
+- Phím tắt chuyển trạng thái nhanh trên từng thẻ.
 
-### Cách 2: Mở nhanh qua PowerShell / Terminal
-Chạy lệnh sau:
-```powershell
-Start-Process "ContractFlow\index.html"
-```
+### 2. 📅 Lịch Tháng & Ghi Chú Kế Hoạch (Interactive Calendar)
+- Xem lịch tháng trực quan với các chấm màu báo hiệu ngày có việc cần làm hoặc hợp đồng đến hạn.
+- Chọn ngày bất kỳ để xem danh sách việc chi tiết hoặc bấm **"Thêm việc"** để lên lịch công tác, nghiệm thu, đối soát.
+
+### 3. ☀️ Bàn Giao: "Hôm Nay Sẽ Làm Gì?" (Today Action Center)
+- Nằm ngay đầu trang, tự động tổng hợp:
+  - Các hợp đồng có hạn xử lý rơi vào hôm nay (cảnh báo đỏ nổi bật).
+  - Các việc cần làm được xếp lịch trong ngày kèm checkbox hoàn thành.
+  - Nút thêm nhanh việc hôm nay.
+
+### 4. 🏷️ Phân Loại Ngành & Vai Trò Đối Tác Chuẩn Xây Dựng
+- **Phân loại**:
+  - 🏗️ Thi công xây dựng
+  - 🧱 Cung cấp vật tư / vật liệu
+  - 📐 Dịch vụ / Khảo sát / Tư vấn QLDA
+  - 🚜 Thuê máy móc / Thiết bị cơ giới
+  - 📊 Quyết toán hồ sơ
+  - 📄 Khác
+- **Vai trò đối tác**:
+  - Chủ đầu tư (CĐT)
+  - Nhà thầu phụ (NTP)
+  - Nhà cung cấp (NCC)
+  - Đối tác khác
+
+### 5. 📂 Theo Dõi Đường Dẫn File Trên Máy Tính (`filepath`)
+- Ghi nhận vị trí file hợp đồng lưu trên ổ cứng (ví dụ: `D:\DuAn_Landmark\ThepHoaPhat.pdf`).
+- Nút bấm **"Copy path"** sao chép đường dẫn vào clipboard 1 chạm, dán vào File Explorer mở file ngay lập tức.
+
+### 6. 💵 Hỗ Trợ Số Tiền Lẻ Thập Phân
+- Định dạng tiền tệ chính xác đến từng đồng lẻ (ví dụ: `19.800.000.000,75 ₫`).
+
+### 7. ☁️ Tự Động Đồng Bộ Đám Mây Realtime (Firebase Cloud)
+- Đã nhúng sẵn dự án Firebase của bạn (`contractflow-fdacf`).
+- Mọi máy tính và điện thoại mở link đều **tự động đồng bộ hợp đồng và lịch biểu công việc trong tích tắc (dưới 1 giây)**.
+
+---
+
+## 🚀 Triển Khai Lên Netlify:
+Để cập nhật bản mới lên link web online của bạn:
+1. Mở trang quản lý của bạn trên Netlify ➔ Tab **`Deploys`**.
+2. Kéo thả thư mục **`ContractFlow`** (hoặc file `ContractFlow.zip`) vào khung tải lên là xong!

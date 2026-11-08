@@ -2,702 +2,2210 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ContractFlow - Hệ Thống Quản Lý & Quy Trình Hợp Đồng</title>
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ContractFlow - Quản Lý Hợp Đồng</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDKs for Cloud Realtime Sync -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+          },
           colors: {
+            canvas: '#f4f5f9',
             brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#1e40af',
-              900: '#1e3a8a'
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
             }
+          },
+          boxShadow: {
+            'soft': '0 10px 40px -10px rgba(15, 23, 42, 0.05)',
+            'row-hover': '0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04)',
           }
         }
       }
     }
   </script>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Chart.js CDN for Analytics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      background-color: #f3f4f8;
+      color: #1e293b;
+      -webkit-tap-highlight-color: transparent;
+    }
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Hiệu ứng nổi dòng giống ảnh mẫu LoopAI */
+    .project-row {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @media (min-width: 768px) {
+      .project-row:hover {
+        transform: translateY(-2px) scale(1.006);
+        box-shadow: 0 14px 30px -8px rgba(15, 23, 42, 0.09), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+        background-color: #ffffff;
+        z-index: 10;
+        border-color: #e2e8f0;
+      }
+    }
+    .kanban-col {
+      min-width: 285px;
+      max-width: 315px;
+    }
+    @media (max-width: 767px) {
+      .kanban-col {
+        min-width: 100% !important;
+        max-width: 100% !important;
+      }
+    }
+    @supports(padding: max(0px)) {
+      .safe-bottom {
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+      }
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- Header & Top Navigation -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        
-        <!-- Logo & Title -->
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <i data-lucide="shield-check" class="w-6 h-6"></i>
+  <!-- TOP NAVIGATION BAR (PHONG CÁCH MINIMALIST PILL TABS) -->
+  <header class="sticky top-0 z-30 bg-[#f3f4f8]/90 backdrop-blur-md border-b border-slate-200/60">
+    <div class="max-w-[1400px] mx-auto px-3.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
+      
+      <!-- Left: Logo & Quick Partner Badges -->
+      <div class="flex items-center space-x-3 sm:space-x-5">
+        <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchView('list')">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0">
+            <i class="fa-solid fa-infinity text-sm sm:text-base"></i>
           </div>
-          <div>
-            <div class="flex items-center space-x-2">
-              <h1 class="text-xl font-bold tracking-tight text-slate-900">Contract<span class="text-blue-600">Flow</span></h1>
-              <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-blue-200">Mini App</span>
-            </div>
-            <p class="text-xs text-slate-500 hidden sm:block">Quản lý quy trình & theo dõi hợp đồng đầu ngày</p>
-          </div>
+          <span class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">ContractFlow</span>
         </div>
 
-        <!-- Date & Quick Actions -->
-        <div class="flex items-center space-x-2 sm:space-x-3">
-          
-          <!-- Live Date Badge -->
-          <div class="hidden md:flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600">
-            <i data-lucide="calendar" class="w-4 h-4 text-blue-600"></i>
-            <span id="currentDateDisplay">Hôm nay: ...</span>
-          </div>
-
-          <!-- Backup / Restore Dropdown / Actions -->
-          <button id="btnExportData" title="Sao lưu dữ liệu ra file JSON" class="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition border border-slate-200 text-xs font-medium flex items-center space-x-1.5">
-            <i data-lucide="download" class="w-4 h-4"></i>
-            <span class="hidden lg:inline">Sao lưu</span>
-          </button>
-
-          <label title="Phục hồi dữ liệu từ file JSON" class="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition border border-slate-200 text-xs font-medium flex items-center space-x-1.5 cursor-pointer">
-            <i data-lucide="upload" class="w-4 h-4"></i>
-            <span class="hidden lg:inline">Nhập file</span>
-            <input type="file" id="importFileInput" accept=".json" class="hidden">
-          </label>
-
-          <button id="btnResetDemo" title="Tải lại dữ liệu mẫu" class="p-2 text-slate-600 hover:text-amber-600 hover:bg-slate-100 rounded-lg transition border border-slate-200 text-xs font-medium flex items-center space-x-1.5">
-            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-            <span class="hidden lg:inline">Dữ liệu mẫu</span>
-          </button>
-
-          <!-- Primary Add Button -->
-          <button id="btnOpenNewContractModal" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm shadow-blue-600/30 flex items-center space-x-2 transition active:scale-95 text-sm">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            <span>Thêm hợp đồng</span>
+        <!-- Subtle Role Avatars (Giống cụm icon tròn màu xanh/lá trên ảnh mẫu) -->
+        <div class="hidden xl:flex items-center -space-x-1.5 pl-2">
+          <span onclick="filterByRoleQuick('CHU_DAU_TU')" class="w-7 h-7 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#f3f4f8] cursor-pointer hover:scale-110 transition" title="Lọc Chủ đầu tư">CĐT</span>
+          <span onclick="filterByRoleQuick('NHA_THAU_PHU')" class="w-7 h-7 rounded-full bg-sky-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#f3f4f8] cursor-pointer hover:scale-110 transition" title="Lọc Nhà thầu phụ">NTP</span>
+          <span onclick="filterByRoleQuick('NHA_CUNG_CAP')" class="w-7 h-7 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#f3f4f8] cursor-pointer hover:scale-110 transition" title="Lọc Nhà cung cấp">NCC</span>
+          <button onclick="openModalCreate()" class="w-7 h-7 rounded-full bg-white text-slate-500 hover:text-indigo-600 text-xs flex items-center justify-center ring-2 ring-[#f3f4f8] border border-slate-200 shadow-sm hover:scale-110 transition" title="Tạo nhanh hợp đồng">
+            <i class="fa-solid fa-plus text-[10px]"></i>
           </button>
         </div>
-
       </div>
+
+      <!-- Center: Minimalist Pill Navigation (PC) -->
+      <nav class="hidden md:flex items-center space-x-1 lg:space-x-2">
+        <button id="nav-tab-list" onclick="switchView('list')" class="px-5 py-2 rounded-full text-sm font-semibold bg-white text-slate-900 border border-slate-300/80 shadow-sm transition">
+          Hợp Đồng
+        </button>
+        <button id="nav-tab-kanban" onclick="switchView('kanban')" class="px-5 py-2 rounded-full text-sm font-medium text-slate-500 hover:text-slate-900 transition">
+          Quy Trình
+        </button>
+        <button id="nav-tab-calendar" onclick="switchView('calendar')" class="px-5 py-2 rounded-full text-sm font-medium text-slate-500 hover:text-slate-900 transition">
+          Lịch & Việc
+        </button>
+        <button id="nav-tab-archive" onclick="switchView('archive')" class="px-5 py-2 rounded-full text-sm font-medium text-slate-500 hover:text-slate-900 transition flex items-center gap-1.5">
+          <span>Kho Lưu</span>
+          <span id="archive-count-badge" class="text-[11px] bg-slate-200/80 text-slate-600 px-2 py-0.5 rounded-full font-bold">0</span>
+        </button>
+      </nav>
+
+      <!-- Right: Cloud Status, Backup & Mobile Add -->
+      <div class="flex items-center space-x-2">
+        <button id="btnOpenCloudSyncModal" onclick="openCloudModal()" class="flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold rounded-full bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 shadow-sm transition" title="Đồng bộ đám mây Firebase Realtime">
+          <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span id="cloudStatusText" class="hidden sm:inline">Đang kết nối...</span>
+          <i class="fa-solid fa-cloud text-slate-400 sm:hidden"></i>
+        </button>
+
+        <button onclick="exportBackupData()" class="w-9 h-9 rounded-full bg-white text-slate-500 hover:text-indigo-600 border border-slate-200/80 shadow-sm flex items-center justify-center transition" title="Sao lưu dữ liệu ra file JSON">
+          <i class="fa-solid fa-download text-xs"></i>
+        </button>
+      </div>
+
     </div>
   </header>
 
-  <!-- Main Content Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+  <!-- MAIN WORKSPACE CONTAINER -->
+  <main class="flex-1 max-w-[1400px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 pb-24 md:pb-8">
+    
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      
+      <!-- LEFT / MAIN CONTENT AREA (9 COLS ON PC) -->
+      <div class="lg:col-span-8 xl:col-span-9 flex flex-col space-y-4">
 
-    <!-- DAILY BRIEFING BANNER: HỢP ĐỒNG CẦN XỬ LÝ ĐẦU NGÀY -->
-    <section id="dailyBriefingSection" class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden border border-slate-800">
-      <!-- Background pattern decor -->
-      <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute right-40 top-0 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-      <div class="relative z-10 space-y-4">
-        
-        <!-- Header of Morning Briefing -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-              <i data-lucide="sunrise" class="w-6 h-6"></i>
-            </div>
+        <!-- MAIN WHITE CARD WRAPPER (GIỐNG KHUNG "MANAGE PROJECTS" TRONG ẢNH) -->
+        <div class="bg-white/95 rounded-[24px] sm:rounded-[30px] border border-slate-200/70 shadow-soft p-4 sm:p-6 lg:p-7 flex flex-col">
+          
+          <!-- Card Header: Title + Search & Gradient Add Button -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 sm:pb-5">
             <div>
-              <div class="flex items-center space-x-2">
-                <h2 class="text-lg font-bold tracking-tight text-white">Bàn Giao & Điểm Tin Đầu Ngày</h2>
-                <span id="briefingBadge" class="bg-amber-400/20 text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-400/30 font-semibold">Đang tính toán...</span>
+              <h1 id="main-card-title" class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Quản Lý Hợp Đồng</h1>
+              <p class="text-xs text-slate-400 mt-0.5 hidden sm:block">Theo dõi danh sách, trạng thái trình ký và tiến độ thực hiện</p>
+            </div>
+
+            <div class="flex items-center space-x-2 sm:space-x-2.5">
+              <!-- Search Box Minimalist -->
+              <div class="relative flex-1 sm:w-60">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" id="searchInput" oninput="renderAllViews()" placeholder="Tìm tên HĐ, mã, đối tác..." class="w-full pl-9 pr-3 py-2 bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-200/80 rounded-full text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
               </div>
-              <p class="text-xs text-slate-300">Tổng hợp các hợp đồng cần bạn giải quyết, ký duyệt hoặc đôn đốc hôm nay</p>
+
+              <!-- Role Filter Dropdown (Compact Pill) -->
+              <div class="relative">
+                <select id="filterPartnerRole" onchange="renderAllViews()" class="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-slate-600 text-xs font-medium rounded-full pl-3 pr-7 py-2 focus:outline-none focus:border-indigo-400 cursor-pointer transition">
+                  <option value="ALL">Mọi đối tác</option>
+                  <option value="CHU_DAU_TU">Chủ đầu tư</option>
+                  <option value="NHA_THAU_PHU">Nhà thầu phụ</option>
+                  <option value="NHA_CUNG_CAP">Nhà cung cấp</option>
+                  <option value="DOI_TAC">Đối tác khác</option>
+                </select>
+                <i class="fa-solid fa-sliders text-[10px] text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              </div>
+
+              <!-- Soft Gradient Pill Button ("Add new project" style) -->
+              <button onclick="openModalCreate()" class="hidden sm:inline-flex items-center space-x-1.5 bg-gradient-to-r from-indigo-500 via-indigo-400 to-sky-400 hover:from-indigo-600 hover:to-sky-500 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-full shadow-md shadow-indigo-500/15 active:scale-95 transition shrink-0">
+                <span>Thêm hợp đồng</span>
+              </button>
             </div>
           </div>
 
-          <button id="toggleBriefingListBtn" class="text-xs text-blue-300 hover:text-white flex items-center space-x-1 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-lg border border-white/10 transition self-start sm:self-auto">
-            <span id="toggleBriefingText">Thu gọn danh sách</span>
-            <i data-lucide="chevron-up" id="toggleBriefingIcon" class="w-4 h-4"></i>
-          </button>
-        </div>
-
-        <!-- Metric KPI Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-          
-          <!-- Card: Cần xử lý hôm nay -->
-          <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:border-amber-400/50 transition cursor-pointer" onclick="filterByUrgency('today')">
-            <div class="flex items-center justify-between text-amber-400 mb-1">
-              <span class="text-xs font-semibold uppercase tracking-wider">Hôm nay</span>
-              <i data-lucide="bell-ring" class="w-4 h-4"></i>
+          <!-- Category Filter Pills (Giống hàng "All Projects | Freelancer | Fiverr | Upwork") -->
+          <div class="flex items-center justify-between gap-2 pb-4 border-b border-slate-100 overflow-x-auto no-scrollbar">
+            <div class="flex items-center space-x-1 sm:space-x-2">
+              <button onclick="setCategoryPill('ALL')" id="cat-pill-ALL" class="cat-pill px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-slate-300 text-slate-900 bg-white shadow-sm whitespace-nowrap transition">
+                Tất cả dự án
+              </button>
+              <button onclick="setCategoryPill('THI_CONG')" id="cat-pill-THI_CONG" class="cat-pill px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 border border-transparent whitespace-nowrap transition">
+                Thi công
+              </button>
+              <button onclick="setCategoryPill('VAT_TU')" id="cat-pill-VAT_TU" class="cat-pill px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 border border-transparent whitespace-nowrap transition">
+                Vật tư
+              </button>
+              <button onclick="setCategoryPill('DICH_VU')" id="cat-pill-DICH_VU" class="cat-pill px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 border border-transparent whitespace-nowrap transition">
+                Dịch vụ & TVGS
+              </button>
+              <button onclick="setCategoryPill('TAI_SAN')" id="cat-pill-TAI_SAN" class="cat-pill px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 border border-transparent whitespace-nowrap transition">
+                Thuê máy
+              </button>
+              <button onclick="setCategoryPill('QUYET_TOAN')" id="cat-pill-QUYET_TOAN" class="cat-pill px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 border border-transparent whitespace-nowrap transition">
+                Quyết toán
+              </button>
             </div>
-            <div class="text-2xl font-bold text-white" id="countDueToday">0</div>
-            <div class="text-[11px] text-slate-300 mt-0.5">Hợp đồng cần xử lý</div>
-          </div>
-
-          <!-- Card: Quá hạn xử lý -->
-          <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:border-rose-400/50 transition cursor-pointer" onclick="filterByUrgency('overdue')">
-            <div class="flex items-center justify-between text-rose-400 mb-1">
-              <span class="text-xs font-semibold uppercase tracking-wider">Quá hạn</span>
-              <i data-lucide="alert-octagon" class="w-4 h-4"></i>
-            </div>
-            <div class="text-2xl font-bold text-white" id="countOverdue">0</div>
-            <div class="text-[11px] text-slate-300 mt-0.5">Cần giải quyết gấp</div>
-          </div>
-
-          <!-- Card: Sắp hết hạn trong 30 ngày -->
-          <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:border-yellow-400/50 transition cursor-pointer" onclick="filterByUrgency('expiring')">
-            <div class="flex items-center justify-between text-yellow-300 mb-1">
-              <span class="text-xs font-semibold uppercase tracking-wider">Sắp hết hạn</span>
-              <i data-lucide="clock-alert" class="w-4 h-4"></i>
-            </div>
-            <div class="text-2xl font-bold text-white" id="countExpiringSoon">0</div>
-            <div class="text-[11px] text-slate-300 mt-0.5">Trong vòng 30 ngày</div>
-          </div>
-
-          <!-- Card: Đang thực hiện / Tổng giá trị -->
-          <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:border-blue-400/50 transition cursor-pointer" onclick="filterByUrgency('active')">
-            <div class="flex items-center justify-between text-blue-300 mb-1">
-              <span class="text-xs font-semibold uppercase tracking-wider">Đang vận hành</span>
-              <i data-lucide="layers" class="w-4 h-4"></i>
-            </div>
-            <div class="text-2xl font-bold text-white" id="countActiveTotal">0</div>
-            <div class="text-[11px] text-slate-300 mt-0.5" id="totalActiveValueFormatted">0 ₫</div>
-          </div>
-
-        </div>
-
-        <!-- Action Items List for Today (Expandable) -->
-        <div id="briefingItemsContainer" class="space-y-2 pt-2 border-t border-white/10">
-          <div class="text-xs font-semibold text-slate-300 flex items-center space-x-1.5 mb-2">
-            <i data-lucide="list-checks" class="w-4 h-4 text-amber-400"></i>
-            <span>Nhiệm vụ cụ thể cần ưu tiên thực hiện trong ngày:</span>
-          </div>
-
-          <div id="briefingActionList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-            <!-- Dynamic items rendered by app.js -->
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- Navigation Tabs & View Switches -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-3 no-print">
-      
-      <!-- Tab Buttons -->
-      <div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto pb-1 md:pb-0">
-        <button id="tabPipeline" class="tab-btn active px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition bg-blue-600 text-white shadow-sm shadow-blue-600/30">
-          <i data-lucide="kanban" class="w-4 h-4"></i>
-          <span>Quy trình (Pipeline)</span>
-        </button>
-
-        <button id="tabTable" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
-          <i data-lucide="table" class="w-4 h-4"></i>
-          <span>Danh sách chi tiết</span>
-          <span id="badgeActiveCount" class="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold ml-1">0</span>
-        </button>
-
-        <button id="tabArchive" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
-          <i data-lucide="archive" class="w-4 h-4"></i>
-          <span>Kho lưu trữ</span>
-          <span id="badgeArchiveCount" class="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-bold ml-1">0</span>
-        </button>
-
-        <button id="tabAnalytics" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
-          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-          <span>Thống kê & Báo cáo</span>
-        </button>
-      </div>
-
-      <!-- Search & Filters Toolbar -->
-      <div class="flex items-center space-x-2 sm:space-x-3 w-full md:w-auto">
-        
-        <!-- Search Input -->
-        <div class="relative flex-1 md:w-64">
-          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input type="text" id="searchInput" placeholder="Tìm kiếm hợp đồng, đối tác..." class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        </div>
-
-        <!-- Filter Contract Type -->
-        <select id="filterTypeSelect" class="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="all">Tất cả loại HĐ</option>
-          <!-- Options populated from CONTRACT_TYPES -->
-        </select>
-
-        <!-- Filter Priority -->
-        <select id="filterPrioritySelect" class="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 hidden sm:block">
-          <option value="all">Mọi mức độ</option>
-          <option value="high">Ưu tiên cao</option>
-          <option value="medium">Trung bình</option>
-          <option value="low">Thấp</option>
-        </select>
-
-      </div>
-    </div>
-
-    <!-- VIEW 1: KANBAN PIPELINE PROCESS -->
-    <section id="viewPipeline" class="space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto pb-4">
-        
-        <!-- Stage 1: Soạn thảo / Mới tạo -->
-        <div class="bg-slate-100/80 rounded-xl p-3 border border-slate-200 flex flex-col">
-          <div class="flex items-center justify-between pb-3 mb-2 border-b border-slate-200">
-            <div class="flex items-center space-x-2">
-              <div class="w-2.5 h-2.5 rounded-full bg-slate-500"></div>
-              <h3 class="font-bold text-sm text-slate-800">1. Soạn thảo</h3>
-            </div>
-            <span class="column-count bg-white text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full border border-slate-200" id="countStage-draft">0</span>
-          </div>
-          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-draft" data-stage="draft">
-            <!-- Cards rendered here -->
-          </div>
-        </div>
-
-        <!-- Stage 2: Chờ thẩm định / Duyệt -->
-        <div class="bg-amber-50/50 rounded-xl p-3 border border-amber-200/60 flex flex-col">
-          <div class="flex items-center justify-between pb-3 mb-2 border-b border-amber-200/60">
-            <div class="flex items-center space-x-2">
-              <div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
-              <h3 class="font-bold text-sm text-amber-900">2. Chờ duyệt</h3>
-            </div>
-            <span class="column-count bg-white text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full border border-amber-200" id="countStage-review">0</span>
-          </div>
-          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-review" data-stage="review">
-            <!-- Cards rendered here -->
-          </div>
-        </div>
-
-        <!-- Stage 3: Chờ ký kết -->
-        <div class="bg-purple-50/50 rounded-xl p-3 border border-purple-200/60 flex flex-col">
-          <div class="flex items-center justify-between pb-3 mb-2 border-b border-purple-200/60">
-            <div class="flex items-center space-x-2">
-              <div class="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
-              <h3 class="font-bold text-sm text-purple-900">3. Chờ ký kết</h3>
-            </div>
-            <span class="column-count bg-white text-purple-700 text-xs font-bold px-2 py-0.5 rounded-full border border-purple-200" id="countStage-signing">0</span>
-          </div>
-          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-signing" data-stage="signing">
-            <!-- Cards rendered here -->
-          </div>
-        </div>
-
-        <!-- Stage 4: Đang thực hiện -->
-        <div class="bg-blue-50/50 rounded-xl p-3 border border-blue-200/60 flex flex-col">
-          <div class="flex items-center justify-between pb-3 mb-2 border-b border-blue-200/60">
-            <div class="flex items-center space-x-2">
-              <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-              <h3 class="font-bold text-sm text-blue-900">4. Đang thực hiện</h3>
-            </div>
-            <span class="column-count bg-white text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full border border-blue-200" id="countStage-active">0</span>
-          </div>
-          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-active" data-stage="active">
-            <!-- Cards rendered here -->
-          </div>
-        </div>
-
-        <!-- Stage 5: Sắp hết hạn / Cần gia hạn -->
-        <div class="bg-rose-50/50 rounded-xl p-3 border border-rose-200/60 flex flex-col">
-          <div class="flex items-center justify-between pb-3 mb-2 border-b border-rose-200/60">
-            <div class="flex items-center space-x-2">
-              <div class="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
-              <h3 class="font-bold text-sm text-rose-900">5. Sắp hết hạn</h3>
-            </div>
-            <span class="column-count bg-white text-rose-700 text-xs font-bold px-2 py-0.5 rounded-full border border-rose-200" id="countStage-expiring">0</span>
-          </div>
-          <div class="pipeline-column space-y-3 overflow-y-auto pr-1" id="column-expiring" data-stage="expiring">
-            <!-- Cards rendered here -->
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- VIEW 2: TABLE VIEW -->
-    <section id="viewTable" class="hidden space-y-4">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-700">
-            <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3">Mã HĐ</th>
-                <th class="px-4 py-3">Tên hợp đồng & Đối tác</th>
-                <th class="px-4 py-3">Loại HĐ</th>
-                <th class="px-4 py-3">Giá trị (VNĐ)</th>
-                <th class="px-4 py-3">Giai đoạn</th>
-                <th class="px-4 py-3">Việc cần xử lý</th>
-                <th class="px-4 py-3">Hạn chót</th>
-                <th class="px-4 py-3 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="tableContractsBody" class="divide-y divide-slate-200">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
-        </div>
-        <div id="tableEmptyState" class="hidden p-12 text-center text-slate-500">
-          <i data-lucide="inbox" class="w-12 h-12 mx-auto text-slate-300 mb-2"></i>
-          <p class="font-medium">Không tìm thấy hợp đồng nào phù hợp với bộ lọc</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- VIEW 3: ARCHIVE VIEW (LƯU TRỮ HỢP ĐỒNG ĐÃ XỬ LÝ XONG) -->
-    <section id="viewArchive" class="hidden space-y-4">
-      <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
-            <i data-lucide="archive" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-emerald-950">Kho Lưu Trữ Hợp Đồng Đã Xử Lý Xong</h3>
-            <p class="text-xs text-emerald-800">Nơi tập trung các hợp đồng đã thanh lý, hoàn tất hoặc hết hiệu lực để tra cứu lịch sử khi cần</p>
-          </div>
-        </div>
-        <button id="btnExportArchive" class="bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
-          <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-          <span>Xuất danh sách lưu trữ</span>
-        </button>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-700">
-            <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3">Mã HĐ</th>
-                <th class="px-4 py-3">Tên hợp đồng & Đối tác</th>
-                <th class="px-4 py-3">Loại HĐ</th>
-                <th class="px-4 py-3">Giá trị hợp đồng</th>
-                <th class="px-4 py-3">Thời gian hiệu lực</th>
-                <th class="px-4 py-3">Ngày hoàn tất</th>
-                <th class="px-4 py-3">Người phụ trách</th>
-                <th class="px-4 py-3 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="tableArchiveBody" class="divide-y divide-slate-200">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
-        </div>
-        <div id="archiveEmptyState" class="hidden p-12 text-center text-slate-500">
-          <i data-lucide="archive" class="w-12 h-12 mx-auto text-slate-300 mb-2"></i>
-          <p class="font-medium">Chưa có hợp đồng nào được lưu trữ</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- VIEW 4: ANALYTICS & CHARTS -->
-    <section id="viewAnalytics" class="hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        <!-- Chart 1: Phân bổ hợp đồng theo giai đoạn -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center space-x-2">
-            <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i>
-            <span>Tỷ lệ hợp đồng theo giai đoạn quy trình</span>
-          </h3>
-          <div class="h-64 flex items-center justify-center">
-            <canvas id="chartStageDistribution"></canvas>
-          </div>
-        </div>
-
-        <!-- Chart 2: Giá trị hợp đồng theo loại hình -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center space-x-2">
-            <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-600"></i>
-            <span>Tổng giá trị theo loại hợp đồng (VNĐ)</span>
-          </h3>
-          <div class="h-64 flex items-center justify-center">
-            <canvas id="chartTypeValue"></canvas>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-  </main>
-
-  <!-- MODAL: TẠO MỚI / CHỈNH SỬA HỢP ĐỒNG -->
-  <div id="contractModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
-    <div class="modal-backdrop fixed inset-0"></div>
-    <div class="bg-white rounded-2xl max-w-2xl w-full mx-4 overflow-hidden shadow-2xl z-10 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
-      
-      <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-            <i data-lucide="file-plus" class="w-5 h-5"></i>
-          </div>
-          <h3 id="modalContractTitle" class="text-base font-bold text-slate-800">Thêm Hợp Đồng Mới</h3>
-        </div>
-        <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-200/50">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <!-- Modal Body (Form) -->
-      <form id="contractForm" class="p-6 overflow-y-auto space-y-4 flex-1">
-        <input type="hidden" id="formContractIdHidden">
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <!-- Mã HĐ -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Mã hợp đồng *</label>
-            <input type="text" id="formContractCode" required placeholder="VD: HD-2026-008" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-
-          <!-- Loại HĐ -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Loại hợp đồng *</label>
-            <select id="formContractType" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              <!-- Options populated dynamically -->
+            <!-- Hidden select to preserve JS compatibility -->
+            <select id="filterCategory" class="hidden">
+              <option value="ALL">ALL</option>
+              <option value="THI_CONG">THI_CONG</option>
+              <option value="VAT_TU">VAT_TU</option>
+              <option value="DICH_VU">DICH_VU</option>
+              <option value="TAI_SAN">TAI_SAN</option>
+              <option value="QUYET_TOAN">QUYET_TOAN</option>
+              <option value="KHAC">KHAC</option>
             </select>
+
+            <!-- Quick View Mode Switcher (List vs Kanban) -->
+            <div class="hidden sm:flex items-center bg-slate-100 p-0.5 rounded-full border border-slate-200/60 shrink-0">
+              <button id="subbtn-list" onclick="switchView('list')" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-white text-slate-800 shadow-sm transition" title="Xem dạng danh sách tối giản">
+                <i class="fa-solid fa-bars"></i>
+              </button>
+              <button id="subbtn-kanban" onclick="switchView('kanban')" class="px-2.5 py-1 rounded-full text-xs font-medium text-slate-500 hover:text-slate-800 transition" title="Xem dạng bảng Quy trình">
+                <i class="fa-solid fa-table-columns"></i>
+              </button>
+            </div>
           </div>
 
-          <!-- Mức độ ưu tiên -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Độ ưu tiên *</label>
-            <select id="formPriority" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              <option value="high">🔴 Cao (Cần xử lý gấp)</option>
-              <option value="medium" selected>🟡 Trung bình</option>
-              <option value="low">🟢 Bình thường</option>
-            </select>
+          <!-- ==================== VIEW 1: BASIC CLEAN LIST (MẶC ĐỊNH GIỐNG ẢNH MẪU) ==================== -->
+          <div id="view-list" class="flex-1 flex flex-col pt-2">
+            <!-- Table Column Headers (Hidden on Mobile, Visible on PC) -->
+            <div class="hidden md:grid md:grid-cols-12 items-center px-4 py-2.5 text-xs font-medium text-slate-400 select-none">
+              <div class="col-span-3 flex items-center space-x-3">
+                <span class="w-4 h-4 rounded border border-slate-200 inline-block"></span>
+                <span>Đối tác & Mã HĐ</span>
+              </div>
+              <div class="col-span-4">Hạng mục hợp đồng & Dự án</div>
+              <div class="col-span-1 text-center">Hồ sơ</div>
+              <div class="col-span-1 text-center">Hạn xử lý</div>
+              <div class="col-span-1 text-right pr-2">Giá trị</div>
+              <div class="col-span-2 flex items-center justify-between pl-3">
+                <span>Trạng thái</span>
+                <span>Thêm</span>
+              </div>
+            </div>
+
+            <!-- Rows Container -->
+            <div id="list-rows-container" class="divide-y divide-slate-100/80 space-y-1.5 md:space-y-1 mt-1">
+              <!-- Rendered dynamically via JS -->
+            </div>
           </div>
+
+          <!-- ==================== VIEW 2: KANBAN PIPELINE ==================== -->
+          <div id="view-kanban" class="hidden flex-1 flex flex-col pt-4">
+            <!-- Mobile Stage Selector Pills -->
+            <div class="md:hidden flex items-center space-x-1.5 overflow-x-auto pb-3 no-scrollbar">
+              <button id="mobile-pill-DRAFT" onclick="switchMobileStage('DRAFT')" class="px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition bg-slate-900 text-white shadow-sm flex items-center gap-1.5">
+                <span>1. Soạn thảo</span>
+                <span class="bg-white/20 text-white text-[10px] px-1.5 rounded-full" id="mobile-badge-DRAFT">0</span>
+              </button>
+              <button id="mobile-pill-INTERNAL_REVIEW" onclick="switchMobileStage('INTERNAL_REVIEW')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition bg-slate-100 text-slate-600 flex items-center gap-1.5">
+                <span>2. Trình ký</span>
+                <span class="bg-amber-100 text-amber-800 text-[10px] px-1.5 rounded-full" id="mobile-badge-INTERNAL_REVIEW">0</span>
+              </button>
+              <button id="mobile-pill-REJECTED" onclick="switchMobileStage('REJECTED')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition bg-slate-100 text-slate-600 flex items-center gap-1.5">
+                <span>3. Trả về</span>
+                <span class="bg-rose-100 text-rose-800 text-[10px] px-1.5 rounded-full" id="mobile-badge-REJECTED">0</span>
+              </button>
+              <button id="mobile-pill-SENT_TO_PARTNER" onclick="switchMobileStage('SENT_TO_PARTNER')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition bg-slate-100 text-slate-600 flex items-center gap-1.5">
+                <span>4. Gửi CĐT</span>
+                <span class="bg-sky-100 text-sky-800 text-[10px] px-1.5 rounded-full" id="mobile-badge-SENT_TO_PARTNER">0</span>
+              </button>
+              <button id="mobile-pill-SIGNED_ACTIVE" onclick="switchMobileStage('SIGNED_ACTIVE')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition bg-slate-100 text-slate-600 flex items-center gap-1.5">
+                <span>5. Đã ký</span>
+                <span class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 rounded-full" id="mobile-badge-SIGNED_ACTIVE">0</span>
+              </button>
+            </div>
+
+            <!-- Kanban Columns -->
+            <div class="flex items-start space-x-0 md:space-x-3.5 overflow-x-auto pb-3 pt-1 flex-1">
+              <!-- Col 1 -->
+              <div id="col-wrapper-DRAFT" class="kanban-col flex-shrink-0 bg-slate-50/90 rounded-2xl p-3 border border-slate-200/70 flex flex-col max-h-[68vh] w-full md:w-auto">
+                <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-slate-200/60">
+                  <div class="flex items-center space-x-2">
+                    <i class="fa-regular fa-circle-dot text-slate-400 text-xs"></i>
+                    <h3 class="font-bold text-xs text-slate-700">1. Soạn thảo</h3>
+                  </div>
+                  <span class="text-[11px] bg-white text-slate-600 font-bold px-2 py-0.5 rounded-full border border-slate-200" id="badge-col-DRAFT">0</span>
+                </div>
+                <div id="col-DRAFT" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'DRAFT')" class="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[140px]"></div>
+              </div>
+
+              <!-- Col 2 -->
+              <div id="col-wrapper-INTERNAL_REVIEW" class="kanban-col flex-shrink-0 bg-amber-50/40 rounded-2xl p-3 border border-amber-200/60 flex-col max-h-[68vh] w-full md:w-auto hidden md:flex">
+                <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-amber-200/50">
+                  <div class="flex items-center space-x-2">
+                    <i class="fa-regular fa-clock text-amber-500 text-xs"></i>
+                    <h3 class="font-bold text-xs text-amber-900">2. Trình ký nội bộ</h3>
+                  </div>
+                  <span class="text-[11px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full" id="badge-col-INTERNAL_REVIEW">0</span>
+                </div>
+                <div id="col-INTERNAL_REVIEW" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'INTERNAL_REVIEW')" class="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[140px]"></div>
+              </div>
+
+              <!-- Col 3 -->
+              <div id="col-wrapper-REJECTED" class="kanban-col flex-shrink-0 bg-rose-50/40 rounded-2xl p-3 border border-rose-200/60 flex-col max-h-[68vh] w-full md:w-auto hidden md:flex">
+                <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-rose-200/50">
+                  <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-rotate-left text-rose-500 text-xs"></i>
+                    <h3 class="font-bold text-xs text-rose-900">3. Trả về / Cần sửa</h3>
+                  </div>
+                  <span class="text-[11px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full" id="badge-col-REJECTED">0</span>
+                </div>
+                <div id="col-REJECTED" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'REJECTED')" class="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[140px]"></div>
+              </div>
+
+              <!-- Col 4 -->
+              <div id="col-wrapper-SENT_TO_PARTNER" class="kanban-col flex-shrink-0 bg-sky-50/40 rounded-2xl p-3 border border-sky-200/60 flex-col max-h-[68vh] w-full md:w-auto hidden md:flex">
+                <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-sky-200/50">
+                  <div class="flex items-center space-x-2">
+                    <i class="fa-regular fa-paper-plane text-sky-500 text-xs"></i>
+                    <h3 class="font-bold text-xs text-sky-900">4. Gửi đối tác / CĐT</h3>
+                  </div>
+                  <span class="text-[11px] bg-sky-100 text-sky-800 font-bold px-2 py-0.5 rounded-full" id="badge-col-SENT_TO_PARTNER">0</span>
+                </div>
+                <div id="col-SENT_TO_PARTNER" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'SENT_TO_PARTNER')" class="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[140px]"></div>
+              </div>
+
+              <!-- Col 5 -->
+              <div id="col-wrapper-SIGNED_ACTIVE" class="kanban-col flex-shrink-0 bg-emerald-50/40 rounded-2xl p-3 border border-emerald-200/60 flex-col max-h-[68vh] w-full md:w-auto hidden md:flex">
+                <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-emerald-200/50">
+                  <div class="flex items-center space-x-2">
+                    <i class="fa-regular fa-circle-check text-emerald-600 text-xs"></i>
+                    <h3 class="font-bold text-xs text-emerald-900">5. Đã ký - Hiệu lực</h3>
+                  </div>
+                  <span class="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full" id="badge-col-SIGNED_ACTIVE">0</span>
+                </div>
+                <div id="col-SIGNED_ACTIVE" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'SIGNED_ACTIVE')" class="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[140px]"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== VIEW 3: CALENDAR & PLANNER ==================== -->
+          <div id="view-calendar" class="hidden flex-1 flex flex-col pt-4">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+              <!-- Calendar Month Grid -->
+              <div class="xl:col-span-2 bg-slate-50/60 rounded-2xl border border-slate-200/70 p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center space-x-2">
+                    <button onclick="changeCalendarMonth(-1)" class="w-8 h-8 rounded-full bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center transition">
+                      <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <h3 id="calendar-month-year" class="font-bold text-slate-800 text-sm sm:text-base px-2"></h3>
+                    <button onclick="changeCalendarMonth(1)" class="w-8 h-8 rounded-full bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center transition">
+                      <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                  </div>
+                  <button onclick="jumpToTodayCalendar()" class="text-xs px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 shadow-sm transition">
+                    Hôm nay
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-7 gap-1 text-center font-semibold text-[11px] text-slate-400 mb-2">
+                  <div>CN</div><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div>
+                </div>
+                <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 flex-1 select-none"></div>
+              </div>
+
+              <!-- Selected Day Tasks -->
+              <div class="bg-slate-50/60 rounded-2xl border border-slate-200/70 p-4 flex flex-col">
+                <div class="pb-3 border-b border-slate-200/70 mb-3 flex items-center justify-between">
+                  <div>
+                    <span class="text-[11px] font-medium text-slate-400">Lịch trình ngày</span>
+                    <h4 id="selected-date-title" class="font-bold text-slate-900 text-sm">Hôm nay</h4>
+                  </div>
+                  <button onclick="openAddTaskModalForSelectedDate()" class="text-xs bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-3 py-1.5 rounded-full shadow-sm transition flex items-center gap-1">
+                    <i class="fa-solid fa-plus text-[10px]"></i> Thêm việc
+                  </button>
+                </div>
+                <div id="selected-date-tasks" class="flex-1 overflow-y-auto space-y-2 max-h-[420px] pr-1"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== VIEW 4: ARCHIVE (KHO LƯU TRỮ) ==================== -->
+          <div id="view-archive" class="hidden flex-1 flex flex-col pt-3">
+            <div class="flex items-center justify-between px-2 pb-3 mb-2 border-b border-slate-100">
+              <div class="text-xs text-slate-500">
+                Danh sách các hợp đồng đã hoàn tất nghiệm thu, quyết toán hoặc đưa vào lưu trữ.
+              </div>
+              <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold" id="archive-subtext">0 Hợp đồng</span>
+            </div>
+            <div id="archive-rows-container" class="divide-y divide-slate-100 space-y-1.5">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
         </div>
+      </div>
 
-        <!-- Tên Hợp Đồng -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Tên / Tiêu đề hợp đồng *</label>
-          <input type="text" id="formContractTitle" required placeholder="VD: Hợp đồng cung cấp dịch vụ máy chủ đám mây" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
+      <!-- RIGHT SIDEBAR WIDGETS (3 COLS ON PC - PHONG CÁCH WIDGET NHƯ ẢNH MẪU) -->
+      <div class="lg:col-span-4 xl:col-span-3 flex flex-col space-y-5">
 
-        <!-- Thông tin Đối Tác -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Đối tác / Khách hàng *</label>
-            <input type="text" id="formPartner" required placeholder="Tên công ty / cá nhân đối tác" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Liên hệ đối tác (SĐT/Email)</label>
-            <input type="text" id="formPartnerContact" placeholder="VD: 0988.xxx.xxx - lienhe@congty.vn" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-        </div>
-
-        <!-- Giá trị & Người phụ trách -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Giá trị hợp đồng (VNĐ) *</label>
-            <input type="number" id="formValue" required min="0" step="100000" placeholder="VD: 150000000" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Người phụ trách nội bộ</label>
-            <input type="text" id="formAssignee" placeholder="VD: Nguyễn Văn Dũng" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-        </div>
-
-        <!-- Thời gian hiệu lực -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Ngày bắt đầu / Ký kết</label>
-            <input type="date" id="formStartDate" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Ngày hết hạn hợp đồng</label>
-            <input type="date" id="formEndDate" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-        </div>
-
-        <!-- Giai đoạn quy trình -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Giai đoạn quy trình hiện tại *</label>
-          <select id="formStage" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="draft">1. Soạn thảo / Mới tạo</option>
-            <option value="review">2. Chờ thẩm định / Duyệt</option>
-            <option value="signing">3. Chờ ký kết</option>
-            <option value="active">4. Đang thực hiện</option>
-            <option value="expiring">5. Sắp hết hạn</option>
-            <option value="completed">6. Đã hoàn tất / Lưu trữ</option>
-          </select>
-        </div>
-
-        <!-- VÙNG ĐẶC BIỆT: NHIỆM VỤ ĐẦU NGÀY -->
-        <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 space-y-3">
-          <div class="flex items-center space-x-2 text-amber-900 font-bold text-xs uppercase tracking-wide">
-            <i data-lucide="bell" class="w-4 h-4 text-amber-600"></i>
-            <span>Thiết lập lịch nhắc việc & Nhiệm vụ tiếp theo</span>
-          </div>
-          
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- WIDGET 1: VIỆC CẦN LÀM HÔM NAY (THAY CHO BANNER TỐI MÀU CŨ) -->
+        <div class="bg-white/95 rounded-[24px] sm:rounded-[28px] border border-slate-200/70 shadow-soft p-5 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
             <div>
-              <label class="block text-xs font-semibold text-amber-900 mb-1">Ngày cần xử lý tiếp theo</label>
-              <input type="date" id="formNextActionDate" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+              <h2 class="text-sm sm:text-base font-extrabold text-slate-900">Việc Hôm Nay</h2>
+              <p id="today-display-date" class="text-[11px] text-slate-400"></p>
             </div>
-            <div class="sm:col-span-2">
-              <label class="block text-xs font-semibold text-amber-900 mb-1">Nội dung việc cần làm đầu ngày</label>
-              <input type="text" id="formNextActionNote" placeholder="VD: Gửi dự thảo cho giám đốc ký, đối chiếu công nợ..." class="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
-            </div>
-          </div>
-        </div>
-
-        <!-- Tài liệu đính kèm (giả lập) -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Tên file tài liệu / link đính kèm (phân cách bằng dấu phẩy)</label>
-          <input type="text" id="formDocuments" placeholder="VD: HD_ChinhThuc.pdf, BangGia_v1.xlsx" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-
-      </form>
-
-      <!-- Modal Footer -->
-      <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end space-x-3">
-        <button type="button" id="btnCancelModal" class="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 rounded-lg transition">Hủy bỏ</button>
-        <button type="submit" form="contractForm" class="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm shadow-blue-600/30 flex items-center space-x-1.5">
-          <i data-lucide="check" class="w-4 h-4"></i>
-          <span id="btnSubmitFormText">Lưu hợp đồng</span>
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MODAL: XEM CHI TIẾT HỢP ĐỒNG (DETAIL VIEW & TIMELINE) -->
-  <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
-    <div class="modal-backdrop fixed inset-0"></div>
-    <div class="bg-white rounded-2xl max-w-3xl w-full mx-4 overflow-hidden shadow-2xl z-10 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
-      
-      <!-- Detail Header -->
-      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-        <div class="flex items-center space-x-3">
-          <span id="detailBadgeStage" class="px-3 py-1 rounded-full text-xs font-bold border">Trạng thái</span>
-          <span id="detailContractCode" class="text-xs font-mono font-bold text-slate-500">HD-XXXX</span>
-        </div>
-        <div class="flex items-center space-x-2">
-          <button id="btnPrintContract" title="In phiếu tóm tắt" class="text-slate-500 hover:text-slate-800 p-2 rounded-lg hover:bg-slate-200/60 transition">
-            <i data-lucide="printer" class="w-4 h-4"></i>
-          </button>
-          <button id="btnCloseDetailModal" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-200/60">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Detail Body -->
-      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-sm text-slate-700">
-        
-        <!-- Header Info -->
-        <div>
-          <h2 id="detailTitle" class="text-xl font-bold text-slate-900 leading-snug">Tên Hợp Đồng</h2>
-          <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-            <span class="flex items-center space-x-1">
-              <i data-lucide="building" class="w-3.5 h-3.5 text-slate-400"></i>
-              <strong id="detailPartner" class="text-slate-700">Đối tác ABC</strong>
-            </span>
-            <span>•</span>
-            <span id="detailPartnerContact" class="text-slate-600">090.xxxx</span>
-            <span>•</span>
-            <span class="flex items-center space-x-1">
-              <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>Phụ trách: <strong id="detailAssignee" class="text-slate-700">Nguyễn Văn A</strong></span>
-            </span>
-          </div>
-        </div>
-
-        <!-- 3 Highlight Boxes -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="bg-blue-50/70 p-3 rounded-xl border border-blue-100">
-            <div class="text-xs text-blue-700 font-semibold mb-1">Giá trị hợp đồng</div>
-            <div id="detailValue" class="text-lg font-bold text-blue-900">0 ₫</div>
-            <div id="detailType" class="text-[11px] text-blue-600">Loại: Dịch vụ</div>
-          </div>
-          <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200">
-            <div class="text-xs text-slate-600 font-semibold mb-1">Thời hạn hiệu lực</div>
-            <div id="detailDateRange" class="text-xs font-semibold text-slate-800">01/01/2026 - 01/01/2027</div>
-            <div id="detailRemainingDays" class="text-[11px] text-slate-500 mt-1">Còn lại: ... ngày</div>
-          </div>
-          <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200">
-            <div class="text-xs text-amber-800 font-semibold mb-1">Nhiệm vụ tiếp theo</div>
-            <div id="detailNextDueDate" class="text-xs font-bold text-amber-900">Hạn: Chưa đặt</div>
-            <div id="detailNextNote" class="text-[11px] text-amber-800 line-clamp-2 mt-0.5">Chưa có ghi chú</div>
-          </div>
-        </div>
-
-        <!-- Quick Stage Mover (Chuyển giai đoạn nhanh) -->
-        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Chuyển nhanh trạng thái quy trình</div>
-          <div class="flex flex-wrap gap-2" id="detailStageButtons">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Documents Attached -->
-        <div>
-          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center space-x-1.5">
-            <i data-lucide="paperclip" class="w-4 h-4"></i>
-            <span>Tài liệu & Hồ sơ đính kèm</span>
-          </h4>
-          <div id="detailDocumentsList" class="flex flex-wrap gap-2">
-            <!-- Documents rendered here -->
-          </div>
-        </div>
-
-        <!-- Activity Timeline & Notes -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center space-x-1.5">
-              <i data-lucide="history" class="w-4 h-4"></i>
-              <span>Nhật ký tiến độ & Ghi chú xử lý</span>
-            </h4>
-          </div>
-
-          <!-- Add Note Form -->
-          <div class="flex items-center space-x-2">
-            <input type="text" id="inputNewNote" placeholder="Thêm ghi chú tiến độ mới..." class="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <button id="btnAddNote" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1">
-              <i data-lucide="send" class="w-3.5 h-3.5"></i>
-              <span>Ghi nhận</span>
+            <button onclick="openAddQuickTaskModal()" class="w-8 h-8 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition" title="Thêm việc hôm nay">
+              <i class="fa-solid fa-plus text-xs"></i>
             </button>
           </div>
 
-          <!-- Timeline items -->
-          <div id="detailTimelineList" class="space-y-2 border-l-2 border-slate-200 ml-2 pl-4 py-1">
-            <!-- Timeline items rendered here -->
+          <!-- Mini Bar Indicator (Giống biểu đồ màu pastel trong ảnh mẫu) -->
+          <div class="grid grid-cols-4 gap-1.5 mb-3.5">
+            <div class="h-2 rounded-full bg-indigo-400/80"></div>
+            <div class="h-2 rounded-full bg-sky-400/80"></div>
+            <div class="h-2 rounded-full bg-amber-300/80"></div>
+            <div class="h-2 rounded-full bg-emerald-400/80"></div>
+          </div>
+
+          <!-- Today Tasks List -->
+          <div id="today-tasks-list" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- WIDGET 2: HIỆU SUẤT & TIẾN ĐỘ HỢP ĐỒNG (GIỐNG WIDGET "TASK COMPLETION 94%" TRONG ẢNH) -->
+        <div class="bg-white/95 rounded-[24px] sm:rounded-[28px] border border-slate-200/70 shadow-soft p-5 flex flex-col">
+          <div class="flex items-center justify-between mb-1">
+            <h2 class="text-sm sm:text-base font-extrabold text-slate-900">Tiến Độ Hồ Sơ</h2>
+            <span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">Đang hoạt động</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-3">Tỷ lệ hợp đồng đã ký & triển khai</p>
+
+          <div class="flex items-baseline justify-between mb-2">
+            <div class="text-3xl font-extrabold text-slate-900 tracking-tight" id="stat-completion-rate">0%</div>
+            <div class="text-xs font-bold text-emerald-600 truncate max-w-[160px]" id="stat-total-value">0 ₫</div>
+          </div>
+
+          <!-- Row of Green Dots (Giống hệt thiết kế mẫu) -->
+          <div id="completion-dots-row" class="flex items-center space-x-1.5 mb-4">
+            <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+            <span class="w-3 h-3 rounded-full bg-slate-200"></span>
+          </div>
+
+          <!-- Mini Breakdowns -->
+          <div class="grid grid-cols-2 gap-2.5 pt-3 border-t border-slate-100 text-xs">
+            <div class="bg-slate-50/80 p-2.5 rounded-2xl flex items-center justify-between">
+              <span class="text-slate-500">Đang chạy</span>
+              <span class="font-extrabold text-slate-800" id="stat-active-count">0</span>
+            </div>
+            <div class="bg-amber-50/60 p-2.5 rounded-2xl flex items-center justify-between">
+              <span class="text-amber-700">Trình ký</span>
+              <span class="font-extrabold text-amber-800" id="stat-pending-sign">0</span>
+            </div>
+            <div class="bg-sky-50/60 p-2.5 rounded-2xl flex items-center justify-between">
+              <span class="text-sky-700">Gửi CĐT</span>
+              <span class="font-extrabold text-sky-800" id="stat-partner-count">0</span>
+            </div>
+            <div class="bg-rose-50/60 p-2.5 rounded-2xl flex items-center justify-between">
+              <span class="text-rose-700">Trả về</span>
+              <span class="font-extrabold text-rose-600" id="stat-rejected-count">0</span>
+            </div>
           </div>
         </div>
 
       </div>
 
-      <!-- Detail Footer -->
-      <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-        <button id="btnDeleteDetail" class="text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-3 py-2 rounded-lg font-semibold transition flex items-center space-x-1">
-          <i data-lucide="trash-2" class="w-4 h-4"></i>
-          <span>Xóa hợp đồng</span>
-        </button>
+    </div>
+  </main>
 
-        <div class="flex items-center space-x-2">
-          <button id="btnArchiveToggleDetail" class="text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-lg font-semibold transition flex items-center space-x-1">
-            <i data-lucide="archive" class="w-4 h-4"></i>
-            <span id="btnArchiveToggleText">Chuyển vào kho lưu trữ</span>
-          </button>
-
-          <button id="btnEditDetail" class="text-xs text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold transition flex items-center space-x-1 shadow-sm">
-            <i data-lucide="edit-3" class="w-4 h-4"></i>
-            <span>Chỉnh sửa thông tin</span>
-          </button>
+  <!-- MODAL: TẠO / CHỈNH SỬA HỢP ĐỒNG -->
+  <div id="contractModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/40 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-[28px] shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <i class="fa-solid fa-file-signature text-sm"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base" id="modalTitle">Thêm Hợp Đồng Mới</h3>
+            <p class="text-xs text-slate-400">Điền thông tin cơ bản của gói thầu / hợp đồng</p>
+          </div>
         </div>
+        <button onclick="closeModal()" class="w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
+      <form id="contractForm" onsubmit="handleFormSubmit(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
+        <input type="hidden" id="form-contract-id">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Mã / Số Hợp Đồng <span class="text-rose-500">*</span></label>
+            <input type="text" id="form-code" required placeholder="VD: 142/2026/HĐTC" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Dự Án / Công Trình <span class="text-rose-500">*</span></label>
+            <input type="text" id="form-project" required placeholder="VD: Khu Đô Thị Sông Xanh" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Tên Hợp Đồng / Hạng Mục <span class="text-rose-500">*</span></label>
+          <input type="text" id="form-title" required placeholder="VD: Thi công kết cấu móng và tầng hầm B1" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Phân Loại</label>
+            <select id="form-category" required class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+              <option value="THI_CONG">🏗️ Thi công xây dựng</option>
+              <option value="VAT_TU">🧱 Cung cấp vật tư</option>
+              <option value="DICH_VU">📐 Dịch vụ / Tư vấn</option>
+              <option value="TAI_SAN">🚜 Thuê máy móc / Tài sản</option>
+              <option value="QUYET_TOAN">📊 Quyết toán hồ sơ</option>
+              <option value="KHAC">📄 Khác</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Trạng Thái</label>
+            <select id="form-status" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+              <option value="DRAFT">1. Soạn thảo (Draft)</option>
+              <option value="INTERNAL_REVIEW">2. Đang trình ký (In Progress)</option>
+              <option value="REJECTED">3. Trả về / Cần sửa (Rejected)</option>
+              <option value="SENT_TO_PARTNER">4. Đã gửi đối tác / CĐT (On review)</option>
+              <option value="SIGNED_ACTIVE">5. Đã ký - Hiệu lực (Done)</option>
+              <option value="ARCHIVED">📂 Lưu trữ / Quyết toán</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Tên Đối Tác / Đơn Vị <span class="text-rose-500">*</span></label>
+            <input type="text" id="form-partner" required placeholder="VD: Công ty CP Bê Tông An Phát" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Vai Trò Đối Tác</label>
+            <select id="form-partnerRole" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+              <option value="CHU_DAU_TU">Chủ đầu tư (CĐT)</option>
+              <option value="NHA_THAU_PHU">Nhà thầu phụ (NTP)</option>
+              <option value="NHA_CUNG_CAP">Nhà cung cấp (NCC)</option>
+              <option value="DOI_TAC">Đối tác tư vấn / khác</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Giá Trị Hợp Đồng (VNĐ)</label>
+            <input type="number" id="form-value" min="0" step="any" placeholder="VD: 1500000000" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Hạn Xử Lý</label>
+            <input type="date" id="form-deadline" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Người Phụ Trách</label>
+            <input type="text" id="form-assignee" placeholder="VD: Nguyễn Văn Quân" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Vị Trí Hồ Sơ Giấy</label>
+            <input type="text" id="form-attachment" placeholder="VD: Tủ B2 - File 04" class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Đường Dẫn File Trên Máy Tính</label>
+          <input type="text" id="form-filepath" placeholder="VD: D:\HoSoCongTrinh\2026\HopDong_142.pdf" class="w-full text-xs sm:text-sm px-3.5 py-2.5 font-mono bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Ghi Chú Tiến Độ / Nội Dung Cần Sửa</label>
+          <textarea id="form-notes" rows="2" placeholder="Ghi chú thêm về hợp đồng..." class="w-full text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal()" class="px-5 py-2.5 text-xs sm:text-sm text-slate-500 hover:bg-slate-100 rounded-full font-semibold transition">Hủy</button>
+          <button type="submit" class="px-6 py-2.5 text-xs sm:text-sm bg-gradient-to-r from-indigo-500 to-sky-400 hover:from-indigo-600 hover:to-sky-500 text-white rounded-full font-semibold shadow-md shadow-indigo-500/20 transition">Lưu Hợp Đồng</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Toast Container -->
-  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+  <!-- MODAL: THÊM VIỆC CẦN LÀM -->
+  <div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/40 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-[28px] shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <i class="fa-solid fa-check-double text-xs"></i>
+          </div>
+          <h3 class="font-extrabold text-slate-900 text-base">Thêm Việc Cần Làm</h3>
+        </div>
+        <button onclick="closeTaskModal()" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
-  <!-- Load Data and Application Logic -->
-  <script src="data.js"></script>
-  <script src="app.js"></script>
+      <form id="taskForm" onsubmit="handleTaskSubmit(event)" class="p-6 space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Ngày Thực Hiện</label>
+          <input type="date" id="task-form-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nội Dung Công Việc <span class="text-rose-500">*</span></label>
+          <textarea id="task-form-title" required rows="2" placeholder="VD: Trình ký phụ lục hợp đồng thép Hòa Phát..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Đính Kèm Hợp Đồng</label>
+          <select id="task-form-contract-id" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+            <option value="">-- Không chọn --</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Độ Ưu Tiên</label>
+          <select id="task-form-priority" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:outline-none">
+            <option value="HIGH">🔴 Quan trọng / Gấp</option>
+            <option value="NORMAL" selected>🟡 Bình thường</option>
+            <option value="LOW">🟢 Thấp</option>
+          </select>
+        </div>
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeTaskModal()" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-full">Hủy</button>
+          <button type="submit" class="px-5 py-2 text-xs font-semibold bg-indigo-500 hover:bg-indigo-600 text-white rounded-full shadow-sm">Lưu Việc</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: XEM CHI TIẾT & ĐỔI NHANH TRẠNG THÁI -->
+  <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/40 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-[28px] shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5 min-w-0">
+          <span id="detail-code-badge" class="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full shrink-0"></span>
+          <h3 class="font-extrabold text-slate-900 text-base truncate" id="detail-title">Chi Tiết Hợp Đồng</h3>
+        </div>
+        <button onclick="closeDetailModal()" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 flex items-center justify-center shrink-0">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs sm:text-sm" id="detail-content"></div>
+
+      <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+        <div id="detail-actions-left"></div>
+        <button onclick="closeDetailModal()" class="px-5 py-2 text-xs font-semibold bg-slate-200/80 hover:bg-slate-300 rounded-full text-slate-700 transition">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CÀI ĐẶT ĐỒNG BỘ FIREBASE CLOUD -->
+  <div id="cloudModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/40 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-[28px] shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <i class="fa-solid fa-cloud text-sm"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Đồng Bộ Đám Mây Realtime</h3>
+            <p class="text-xs text-slate-400">Tự động cập nhật giữa Máy tính & Điện thoại</p>
+          </div>
+        </div>
+        <button onclick="closeCloudModal()" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs sm:text-sm">
+        <div id="cloudModalStatusBox" class="p-4 rounded-2xl border flex items-center justify-between bg-slate-50 border-slate-200/80">
+          <div class="flex items-center space-x-3">
+            <div id="cloudModalStatusDot" class="w-3 h-3 rounded-full bg-slate-400"></div>
+            <div>
+              <div id="cloudModalStatusTitle" class="font-bold text-slate-800">Chưa kết nối Đám Mây</div>
+              <div id="cloudModalStatusDesc" class="text-xs text-slate-400 mt-0.5">Dữ liệu hiện đang lưu trên trình duyệt của thiết bị này.</div>
+            </div>
+          </div>
+          <button id="btnDisconnectCloud" onclick="disconnectCloud()" class="hidden text-xs text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-full border border-rose-200 font-semibold">
+            Ngắt
+          </button>
+        </div>
+
+        <div class="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 space-y-2.5">
+          <div class="text-xs font-bold text-indigo-950">Đồng bộ thủ công</div>
+          <div class="grid grid-cols-2 gap-2.5 text-xs">
+            <button onclick="pushAllLocalToCloud()" class="bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 p-2.5 rounded-xl font-semibold flex items-center justify-center gap-1.5 shadow-sm transition">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Đẩy lên Cloud</span>
+            </button>
+            <button onclick="pullAllCloudToLocal()" class="bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 p-2.5 rounded-xl font-semibold flex items-center justify-center gap-1.5 shadow-sm transition">
+              <i class="fa-solid fa-cloud-arrow-down"></i>
+              <span>Tải về máy</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1.5">Cấu hình Firebase (firebaseConfig):</label>
+          <textarea id="inputFirebaseConfigText" rows="5" class="w-full p-3 font-mono text-[11px] border border-slate-200 rounded-2xl bg-slate-50 focus:bg-white focus:outline-none"></textarea>
+        </div>
+      </div>
+
+      <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end space-x-2">
+        <button onclick="closeCloudModal()" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-200/60 rounded-full">Đóng</button>
+        <button onclick="saveAndReconnectCloud()" class="px-5 py-2 text-xs font-semibold bg-indigo-500 hover:bg-indigo-600 text-white rounded-full shadow-sm">Lưu & Kết Nối</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR (TỐI GIẢN, TINH TẾ) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-3 py-1.5 flex items-center justify-around safe-bottom shadow-lg">
+    <button id="mobile-nav-list" onclick="switchView('list')" class="flex flex-col items-center justify-center py-1 text-indigo-600 transition flex-1">
+      <i class="fa-solid fa-layer-group text-base mb-0.5"></i>
+      <span class="text-[10px] font-bold">Hợp Đồng</span>
+    </button>
+    <button id="mobile-nav-kanban" onclick="switchView('kanban')" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-800 transition flex-1">
+      <i class="fa-solid fa-table-columns text-base mb-0.5"></i>
+      <span class="text-[10px] font-medium">Quy Trình</span>
+    </button>
+    <!-- Center Plus Button -->
+    <div class="flex flex-col items-center justify-center -mt-4 flex-1">
+      <button onclick="openModalCreate()" class="w-11 h-11 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 active:scale-95 transition">
+        <i class="fa-solid fa-plus text-base"></i>
+      </button>
+      <span class="text-[10px] font-semibold text-slate-500 mt-0.5">Thêm mới</span>
+    </div>
+    <button id="mobile-nav-calendar" onclick="switchView('calendar')" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-800 transition flex-1">
+      <i class="fa-regular fa-calendar-check text-base mb-0.5"></i>
+      <span class="text-[10px] font-medium">Lịch Việc</span>
+    </button>
+    <button id="mobile-nav-archive" onclick="switchView('archive')" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-800 transition flex-1">
+      <i class="fa-solid fa-box-archive text-base mb-0.5"></i>
+      <span class="text-[10px] font-medium">Kho Lưu</span>
+    </button>
+  </nav>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="fixed bottom-16 md:bottom-5 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    const CATEGORY_MAP = {
+      'THI_CONG': { label: 'Thi công', fullLabel: 'Thi Công Xây Dựng', badgeBg: 'bg-emerald-500', softBg: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: 'fa-helmet-safety' },
+      'VAT_TU': { label: 'Vật tư', fullLabel: 'Cung Cấp Vật Tư', badgeBg: 'bg-amber-500', softBg: 'bg-amber-50 text-amber-700 border-amber-200', icon: 'fa-cubes' },
+      'DICH_VU': { label: 'Dịch vụ', fullLabel: 'Dịch Vụ / Tư Vấn', badgeBg: 'bg-indigo-500', softBg: 'bg-indigo-50 text-indigo-700 border-indigo-200', icon: 'fa-compass-drafting' },
+      'TAI_SAN': { label: 'Thuê máy', fullLabel: 'Thuê Máy / Thiết Bị', badgeBg: 'bg-sky-500', softBg: 'bg-sky-50 text-sky-700 border-sky-200', icon: 'fa-truck-front' },
+      'QUYET_TOAN': { label: 'Quyết toán', fullLabel: 'Quyết Toán Hồ Sơ', badgeBg: 'bg-purple-500', softBg: 'bg-purple-50 text-purple-700 border-purple-200', icon: 'fa-file-invoice-dollar' },
+      'KHAC': { label: 'Khác', fullLabel: 'Hợp Đồng Khác', badgeBg: 'bg-slate-500', softBg: 'bg-slate-100 text-slate-700 border-slate-200', icon: 'fa-file-lines' }
+    };
+
+    // Status Pills thiết kế chuẩn theo ảnh mẫu LoopAI (Draft, In Progress, On review, Done)
+    const STATUS_MAP = {
+      'DRAFT': {
+        label: '1. Soạn thảo',
+        shortLabel: 'Soạn thảo',
+        step: 1,
+        pillClass: 'bg-slate-100 text-slate-600 border border-slate-200/80',
+        iconHtml: '<i class="fa-regular fa-circle-dot text-[11px] mr-1.5 text-slate-400"></i>',
+        colBadge: 'bg-slate-100 text-slate-700'
+      },
+      'INTERNAL_REVIEW': {
+        label: '2. Trình ký nội bộ',
+        shortLabel: 'Trình ký',
+        step: 2,
+        pillClass: 'bg-amber-100/80 text-amber-800 border border-amber-200/60',
+        iconHtml: '<i class="fa-regular fa-clock text-[11px] mr-1.5 text-amber-600"></i>',
+        colBadge: 'bg-amber-100 text-amber-800'
+      },
+      'REJECTED': {
+        label: '3. Bị trả về / Sửa',
+        shortLabel: 'Trả về',
+        step: 3,
+        pillClass: 'bg-rose-100/80 text-rose-700 border border-rose-200/60',
+        iconHtml: '<i class="fa-solid fa-rotate-left text-[10px] mr-1.5 text-rose-500"></i>',
+        colBadge: 'bg-rose-100 text-rose-800'
+      },
+      'SENT_TO_PARTNER': {
+        label: '4. Gửi đối tác / CĐT',
+        shortLabel: 'Gửi CĐT',
+        step: 4,
+        pillClass: 'bg-sky-100/80 text-sky-800 border border-sky-200/60',
+        iconHtml: '<i class="fa-regular fa-circle-right text-[11px] mr-1.5 text-sky-600"></i>',
+        colBadge: 'bg-sky-100 text-sky-800'
+      },
+      'SIGNED_ACTIVE': {
+        label: '5. Đã ký - Hiệu lực',
+        shortLabel: 'Đã ký',
+        step: 5,
+        pillClass: 'bg-emerald-100/80 text-emerald-800 border border-emerald-200/60',
+        iconHtml: '<i class="fa-regular fa-circle-check text-[11px] mr-1.5 text-emerald-600"></i>',
+        colBadge: 'bg-emerald-100 text-emerald-800'
+      },
+      'ARCHIVED': {
+        label: 'Đã lưu trữ / Quyết toán',
+        shortLabel: 'Lưu trữ',
+        step: 6,
+        pillClass: 'bg-purple-100/80 text-purple-800 border border-purple-200/60',
+        iconHtml: '<i class="fa-solid fa-box-archive text-[10px] mr-1.5 text-purple-600"></i>',
+        colBadge: 'bg-purple-100 text-purple-800'
+      }
+    };
+
+    const PARTNER_ROLE_MAP = {
+      'CHU_DAU_TU': 'Chủ đầu tư',
+      'NHA_THAU_PHU': 'Nhà thầu phụ',
+      'NHA_CUNG_CAP': 'Nhà cung cấp',
+      'DOI_TAC': 'Đối tác'
+    };
+
+    const ROLE_BADGE_COLOR = {
+      'CHU_DAU_TU': 'bg-emerald-500',
+      'NHA_THAU_PHU': 'bg-sky-500',
+      'NHA_CUNG_CAP': 'bg-amber-500',
+      'DOI_TAC': 'bg-indigo-500'
+    };
+
+    function getTodayString() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    const todayStr = getTodayString();
+
+    const DEFAULT_DATA = [
+      {
+        id: 'hd-101',
+        code: '08/2026/HĐ-VATTU',
+        title: 'Cung cấp 1.200 tấn thép cuộn D10 & D12',
+        project: 'The Landmark Tower - TP Thủ Đức',
+        category: 'VAT_TU',
+        status: 'INTERNAL_REVIEW',
+        partner: 'Thép Hòa Phát Hưng Yên',
+        partnerRole: 'NHA_CUNG_CAP',
+        value: 19800000000,
+        deadline: todayStr,
+        assignee: 'Trần Đình Trọng',
+        notes: 'Đang trình Giám đốc Kỹ thuật & Kế toán trưởng ký duyệt phụ lục đơn giá chiết khấu 2.5%.',
+        attachment: 'HS-HopDongThep-v1.pdf',
+        filepath: 'D:\\DuAn_Landmark\\01_HopDong\\ThepHoaPhat_2026.pdf',
+        createdAt: '2026-11-01',
+        history: [
+          { time: '2026-11-01 09:30', text: 'Khởi tạo hợp đồng dự thảo trên hệ thống.' },
+          { time: '2026-11-04 14:15', text: 'Chuyển sang: Trình ký Ban Giám Đốc và Kế toán trưởng.' }
+        ]
+      },
+      {
+        id: 'hd-102',
+        code: '15/2026/HĐTC-MONG',
+        title: 'Gói thầu thi công cọc nhồi và tường vây D800',
+        project: 'Khu Đô Thị Sông Xanh - GĐ 2',
+        category: 'THI_CONG',
+        status: 'REJECTED',
+        partner: 'Xây dựng & Nền móng Delta',
+        partnerRole: 'NHA_THAU_PHU',
+        value: 45600550000,
+        deadline: '2026-11-15',
+        assignee: 'Lê Minh Tuấn',
+        notes: 'Phòng Pháp chế trả về: Bổ sung bảo lãnh hoàn trả tiền ứng trước và biện pháp neo tầng hầm.',
+        attachment: 'YeuCauChinhSua.docx',
+        filepath: 'C:\\CongTrinh\\SongXanh_GĐ2\\HopDong_Delta.pdf',
+        createdAt: '2026-10-28',
+        history: [
+          { time: '2026-10-28 10:00', text: 'Soạn thảo điều khoản thi công cọc nhồi.' },
+          { time: '2026-11-03 11:30', text: 'BỊ TRẢ VỀ: Yêu cầu cập nhật điều khoản bảo lãnh tạm ứng.' }
+        ]
+      },
+      {
+        id: 'hd-103',
+        code: '04/2026/HĐTV-GS',
+        title: 'Tư vấn giám sát chất lượng và an toàn HSE',
+        project: 'Nhà máy Điện Mặt Trời Bình Thuận',
+        category: 'DICH_VU',
+        status: 'SENT_TO_PARTNER',
+        partner: 'Tập đoàn Năng Lượng Xanh',
+        partnerRole: 'CHU_DAU_TU',
+        value: 3200000000,
+        deadline: '2026-11-25',
+        assignee: 'Nguyễn Bích Ngọc',
+        notes: 'Đã gửi chuyển phát nhanh 03 bản cứng cho Ban QLDA của Chủ đầu tư, chờ CĐT đóng dấu.',
+        attachment: 'VNPost-7782.png',
+        filepath: 'E:\\Duan_NangLuong\\HopDong_TVGS.pdf',
+        createdAt: '2026-10-25',
+        history: [
+          { time: '2026-10-25 08:30', text: 'Tạo hồ sơ ký dịch vụ TVGS.' },
+          { time: '2026-11-02 09:00', text: 'Đã gửi chuyển phát nhanh sang Chủ đầu tư.' }
+        ]
+      },
+      {
+        id: 'hd-104',
+        code: '33/2026/HĐTMM-CAU',
+        title: 'Thuê 02 cần trục tháp Zoomlion 25 tấn',
+        project: 'The Landmark Tower - TP Thủ Đức',
+        category: 'TAI_SAN',
+        status: 'SIGNED_ACTIVE',
+        partner: 'Cơ giới Sài Gòn CMC',
+        partnerRole: 'NHA_CUNG_CAP',
+        value: 850400000,
+        deadline: '2027-06-30',
+        assignee: 'Đỗ Hoàng Nam',
+        notes: 'Đã hoàn thành lắp đặt kiểm định an toàn, đang chạy phục vụ cẩu vật tư sàn lầu 5.',
+        attachment: 'KiemDinh-CanCau.pdf',
+        filepath: 'D:\\ThietBiCoGioi\\ThueCanCauThap.pdf',
+        createdAt: '2026-09-10',
+        history: [
+          { time: '2026-09-15 10:00', text: 'Hai bên ký kết và bàn giao cẩu tháp tại công trường.' }
+        ]
+      },
+      {
+        id: 'hd-105',
+        code: '02/2025/HĐ-QT',
+        title: 'Quyết toán hoàn thiện sơn bả và vách thạch cao',
+        project: 'Trường Quốc Tế Á Châu',
+        category: 'QUYET_TOAN',
+        status: 'ARCHIVED',
+        partner: 'Nội Thất & XD Nam Hải',
+        partnerRole: 'NHA_THAU_PHU',
+        value: 2400876000,
+        deadline: '2026-03-31',
+        assignee: 'Võ Minh Quân',
+        notes: 'Đã ký biên bản nghiệm thu đưa vào sử dụng, thanh quyết toán 100%.',
+        attachment: 'ThanhLyHopDong.pdf',
+        filepath: 'D:\\HoSoLuuTru_Xong\\2025\\QuyetToan_NamHai.pdf',
+        createdAt: '2025-11-10',
+        history: [
+          { time: '2026-04-10 16:30', text: 'Thanh lý hợp đồng và chuyển vào Kho lưu trữ.' }
+        ]
+      }
+    ];
+
+    const DEFAULT_TASKS = [
+      {
+        id: 'task-1',
+        date: todayStr,
+        title: 'Trình BGĐ & Kế toán trưởng ký duyệt HĐ thép Hòa Phát',
+        contractId: 'hd-101',
+        priority: 'HIGH',
+        completed: false
+      },
+      {
+        id: 'task-2',
+        date: todayStr,
+        title: 'Rà soát phụ lục bảo lãnh tạm ứng gửi nhà thầu Delta',
+        contractId: 'hd-102',
+        priority: 'HIGH',
+        completed: false
+      },
+      {
+        id: 'task-3',
+        date: todayStr,
+        title: 'Kiểm tra bưu phẩm VNPost xem CĐT đã nhận bản cứng chưa',
+        contractId: 'hd-103',
+        priority: 'NORMAL',
+        completed: true
+      }
+    ];
+
+    let contracts = [];
+    let calendarTasks = [];
+    let currentCalDate = new Date();
+    let selectedCalDayStr = todayStr;
+
+    // Cấu hình Firebase Realtime Cloud
+    const DEFAULT_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDmudnl8ER6oDfh182OZGQ87m48SZnfuIg",
+      authDomain: "contractflow-fdacf.firebaseapp.com",
+      projectId: "contractflow-fdacf",
+      storageBucket: "contractflow-fdacf.firebasestorage.app",
+      messagingSenderId: "563886365693",
+      appId: "1:563886365693:web:f597485a65d872d6795794",
+      measurementId: "G-75V0XHF531"
+    };
+
+    let firebaseApp = null;
+    let firestoreDb = null;
+    let isCloudSyncActive = false;
+    let unsubContracts = null;
+    let unsubTasks = null;
+
+    function initStorage() {
+      try {
+        const savedContracts = localStorage.getItem('CONSTRUCTION_CONTRACTS_DATA');
+        if (savedContracts) {
+          contracts = JSON.parse(savedContracts);
+        } else {
+          contracts = [...DEFAULT_DATA];
+          saveStorage();
+        }
+
+        const savedTasks = localStorage.getItem('CONTRACTFLOW_TASKS_DATA');
+        if (savedTasks) {
+          calendarTasks = JSON.parse(savedTasks);
+        } else {
+          calendarTasks = [...DEFAULT_TASKS];
+          saveTasksStorage();
+        }
+      } catch (e) {
+        contracts = [...DEFAULT_DATA];
+        calendarTasks = [...DEFAULT_TASKS];
+      }
+      initFirebaseCloudSync();
+    }
+
+    function saveStorage(itemToSync = null) {
+      try {
+        localStorage.setItem('CONSTRUCTION_CONTRACTS_DATA', JSON.stringify(contracts));
+        if (isCloudSyncActive && firestoreDb && itemToSync && itemToSync.id) {
+          firestoreDb.collection('contracts').doc(itemToSync.id).set(itemToSync, { merge: true })
+            .catch(err => console.error("Lỗi sync hợp đồng:", err));
+        }
+      } catch (e) {}
+    }
+
+    function saveTasksStorage(taskToSync = null) {
+      try {
+        localStorage.setItem('CONTRACTFLOW_TASKS_DATA', JSON.stringify(calendarTasks));
+        if (isCloudSyncActive && firestoreDb && taskToSync && taskToSync.id) {
+          firestoreDb.collection('tasks').doc(taskToSync.id).set(taskToSync, { merge: true })
+            .catch(err => console.error("Lỗi sync task:", err));
+        }
+      } catch (e) {}
+    }
+
+    function initFirebaseCloudSync() {
+      try {
+        if (!window.firebase) {
+          updateCloudUI(false);
+          return;
+        }
+        let config = DEFAULT_FIREBASE_CONFIG;
+        const savedConfigStr = localStorage.getItem('CONTRACTFLOW_FIREBASE_CONFIG_CUSTOM');
+        if (savedConfigStr) {
+          try { config = JSON.parse(savedConfigStr); } catch (e) {}
+        }
+        if (firebase.apps && firebase.apps.length > 0) {
+          firebase.app().delete();
+        }
+        firebaseApp = firebase.initializeApp(config);
+        firestoreDb = firebase.firestore();
+        isCloudSyncActive = true;
+        updateCloudUI(true, config.projectId);
+        setupFirestoreListeners();
+      } catch (err) {
+        isCloudSyncActive = false;
+        updateCloudUI(false);
+      }
+    }
+
+    function setupFirestoreListeners() {
+      if (!firestoreDb) return;
+      if (unsubContracts) unsubContracts();
+      if (unsubTasks) unsubTasks();
+
+      unsubContracts = firestoreDb.collection('contracts').onSnapshot(snapshot => {
+        if (!snapshot.empty) {
+          const cloudContracts = [];
+          snapshot.forEach(doc => cloudContracts.push({ id: doc.id, ...doc.data() }));
+          contracts = cloudContracts;
+          try { localStorage.setItem('CONSTRUCTION_CONTRACTS_DATA', JSON.stringify(contracts)); } catch (e) {}
+          renderAllViews();
+        }
+      }, err => console.warn("Lỗi listener hợp đồng:", err));
+
+      unsubTasks = firestoreDb.collection('tasks').onSnapshot(snapshot => {
+        if (!snapshot.empty) {
+          const cloudTasks = [];
+          snapshot.forEach(doc => cloudTasks.push({ id: doc.id, ...doc.data() }));
+          calendarTasks = cloudTasks;
+          try { localStorage.setItem('CONTRACTFLOW_TASKS_DATA', JSON.stringify(calendarTasks)); } catch (e) {}
+          renderAllViews();
+        }
+      }, err => console.warn("Lỗi listener tasks:", err));
+    }
+
+    function updateCloudUI(connected, projectId = '') {
+      const dot = document.getElementById('cloudStatusDot');
+      const text = document.getElementById('cloudStatusText');
+      const mDot = document.getElementById('cloudModalStatusDot');
+      const mTitle = document.getElementById('cloudModalStatusTitle');
+      const mDesc = document.getElementById('cloudModalStatusDesc');
+      const btnDis = document.getElementById('btnDisconnectCloud');
+
+      if (connected) {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        if (text) text.innerText = 'Cloud Sync';
+        if (mDot) mDot.className = 'w-3 h-3 rounded-full bg-emerald-500';
+        if (mTitle) mTitle.innerText = 'Đã Kết Nối Firebase Realtime';
+        if (mDesc) mDesc.innerText = `Dự án: ${projectId || 'contractflow-fdacf'}. Đồng bộ tức thì trên PC & Mobile.`;
+        if (btnDis) btnDis.classList.remove('hidden');
+      } else {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+        if (text) text.innerText = 'Offline';
+        if (mDot) mDot.className = 'w-3 h-3 rounded-full bg-slate-400';
+        if (mTitle) mTitle.innerText = 'Chưa Kết Nối Đám Mây';
+        if (mDesc) mDesc.innerText = 'Dữ liệu đang lưu cục bộ trên trình duyệt này.';
+        if (btnDis) btnDis.classList.add('hidden');
+      }
+    }
+
+    function openCloudModal() {
+      const ta = document.getElementById('inputFirebaseConfigText');
+      if (ta) {
+        const saved = localStorage.getItem('CONTRACTFLOW_FIREBASE_CONFIG_CUSTOM');
+        ta.value = saved ? saved : JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
+      }
+      document.getElementById('cloudModal').classList.remove('hidden');
+    }
+
+    function closeCloudModal() {
+      document.getElementById('cloudModal').classList.add('hidden');
+    }
+
+    function saveAndReconnectCloud() {
+      const ta = document.getElementById('inputFirebaseConfigText');
+      try {
+        const parsed = JSON.parse(ta.value.trim());
+        localStorage.setItem('CONTRACTFLOW_FIREBASE_CONFIG_CUSTOM', JSON.stringify(parsed));
+        initFirebaseCloudSync();
+        closeCloudModal();
+        showToast('Đã lưu và kết nối lại Cloud!', 'success');
+      } catch (e) {
+        showToast('Cấu hình JSON không hợp lệ!', 'error');
+      }
+    }
+
+    function disconnectCloud() {
+      if (unsubContracts) unsubContracts();
+      if (unsubTasks) unsubTasks();
+      isCloudSyncActive = false;
+      firestoreDb = null;
+      firebaseApp = null;
+      updateCloudUI(false);
+      showToast('Đã ngắt kết nối Cloud', 'info');
+    }
+
+    async function pushAllLocalToCloud() {
+      if (!isCloudSyncActive || !firestoreDb) {
+        showToast('Chưa kết nối Cloud!', 'error');
+        return;
+      }
+      try {
+        const batch = firestoreDb.batch();
+        contracts.forEach(c => batch.set(firestoreDb.collection('contracts').doc(c.id), c, { merge: true }));
+        calendarTasks.forEach(t => batch.set(firestoreDb.collection('tasks').doc(t.id), t, { merge: true }));
+        await batch.commit();
+        showToast(`Đã đồng bộ ${contracts.length} hợp đồng lên Cloud!`, 'success');
+      } catch (err) {
+        showToast('Lỗi đẩy lên Cloud: ' + err.message, 'error');
+      }
+    }
+
+    async function pullAllCloudToLocal() {
+      if (!isCloudSyncActive || !firestoreDb) {
+        showToast('Chưa kết nối Cloud!', 'error');
+        return;
+      }
+      try {
+        const cSnap = await firestoreDb.collection('contracts').get();
+        if (!cSnap.empty) {
+          const list = [];
+          cSnap.forEach(d => list.push({ id: d.id, ...d.data() }));
+          contracts = list;
+          saveStorage();
+        }
+        const tSnap = await firestoreDb.collection('tasks').get();
+        if (!tSnap.empty) {
+          const tList = [];
+          tSnap.forEach(d => tList.push({ id: d.id, ...d.data() }));
+          calendarTasks = tList;
+          saveTasksStorage();
+        }
+        renderAllViews();
+        showToast('Đã tải dữ liệu mới nhất từ Cloud!', 'success');
+      } catch (err) {
+        showToast('Lỗi tải từ Cloud: ' + err.message, 'error');
+      }
+    }
+
+    function exportBackupData() {
+      const backupObj = { exportedAt: new Date().toISOString(), contracts, calendarTasks };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", `ContractFlow_Backup_${getTodayString()}.json`);
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+      showToast('Đã tải xuống file sao lưu JSON!', 'success');
+    }
+
+    // Format tiền tệ gọn gàng cho bảng & đầy đủ cho chi tiết
+    function formatMoney(amount) {
+      if (amount === null || amount === undefined || isNaN(amount)) return '0 ₫';
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(amount);
+    }
+
+    function formatShortMoney(amount) {
+      const num = Number(amount) || 0;
+      if (num >= 1e9) return (num / 1e9).toFixed(2).replace(/\.00$/, '') + ' tỷ';
+      if (num >= 1e6) return (num / 1e6).toFixed(1).replace(/\.0$/, '') + ' tr';
+      return formatMoney(num);
+    }
+
+    function formatShortDate(dateStr) {
+      if (!dateStr) return '--';
+      if (dateStr === todayStr) return 'Hôm nay';
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      return `${parts[2]} Thg ${parseInt(parts[1], 10)}`;
+    }
+
+    function getInitials(name) {
+      if (!name) return 'HĐ';
+      const words = name.trim().split(/\s+/);
+      if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+
+    const AVATAR_BG_PALETTE = [
+      'bg-indigo-100 text-indigo-700',
+      'bg-emerald-100 text-emerald-700',
+      'bg-amber-100 text-amber-700',
+      'bg-sky-100 text-sky-700',
+      'bg-rose-100 text-rose-700',
+      'bg-purple-100 text-purple-700'
+    ];
+
+    function getAvatarColor(str) {
+      let hash = 0;
+      for (let i = 0; i < (str || '').length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      return AVATAR_BG_PALETTE[Math.abs(hash) % AVATAR_BG_PALETTE.length];
+    }
+
+    function copyToClipboard(text) {
+      if (!text) {
+        showToast('Chưa có đường dẫn để sao chép', 'error');
+        return;
+      }
+      const dummy = document.createElement("textarea");
+      document.body.appendChild(dummy);
+      dummy.value = text;
+      dummy.select();
+      document.execCommand("copy");
+      document.body.removeChild(dummy);
+      showToast(`Đã sao chép: ${text}`, 'success');
+    }
+
+    // Category Pill Filter
+    function setCategoryPill(cat) {
+      document.getElementById('filterCategory').value = cat;
+      const pills = ['ALL', 'THI_CONG', 'VAT_TU', 'DICH_VU', 'TAI_SAN', 'QUYET_TOAN'];
+      pills.forEach(c => {
+        const btn = document.getElementById(`cat-pill-${c}`);
+        if (!btn) return;
+        if (c === cat) {
+          btn.className = 'cat-pill px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-slate-300 text-slate-900 bg-white shadow-sm whitespace-nowrap transition';
+        } else {
+          btn.className = 'cat-pill px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 border border-transparent whitespace-nowrap transition';
+        }
+      });
+      renderAllViews();
+    }
+
+    function filterByRoleQuick(role) {
+      const sel = document.getElementById('filterPartnerRole');
+      sel.value = sel.value === role ? 'ALL' : role;
+      renderAllViews();
+    }
+
+    // Chuyển đổi View (Mặc định mở 'list' theo phong cách LoopAI)
+    let currentView = 'list';
+    function switchView(viewName) {
+      currentView = viewName;
+      const titles = {
+        'list': 'Quản Lý Hợp Đồng',
+        'kanban': 'Bảng Tiến Độ Quy Trình',
+        'calendar': 'Lịch Biểu & Công Việc',
+        'archive': 'Kho Lưu Trữ & Quyết Toán'
+      };
+      const titleEl = document.getElementById('main-card-title');
+      if (titleEl && titles[viewName]) titleEl.innerText = titles[viewName];
+
+      ['list', 'kanban', 'calendar', 'archive'].forEach(v => {
+        const btn = document.getElementById(`nav-tab-${v}`);
+        const mobBtn = document.getElementById(`mobile-nav-${v}`);
+        const viewElem = document.getElementById(`view-${v}`);
+
+        if (v === viewName) {
+          if (btn) btn.className = 'px-5 py-2 rounded-full text-sm font-semibold bg-white text-slate-900 border border-slate-300/80 shadow-sm transition flex items-center gap-1.5';
+          if (mobBtn) mobBtn.className = 'flex flex-col items-center justify-center py-1 text-indigo-600 transition flex-1';
+          if (viewElem) viewElem.classList.remove('hidden');
+        } else {
+          if (btn) btn.className = 'px-5 py-2 rounded-full text-sm font-medium text-slate-500 hover:text-slate-900 transition flex items-center gap-1.5';
+          if (mobBtn) mobBtn.className = 'flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-800 transition flex-1';
+          if (viewElem) viewElem.classList.add('hidden');
+        }
+      });
+
+      const subList = document.getElementById('subbtn-list');
+      const subKanban = document.getElementById('subbtn-kanban');
+      if (subList && subKanban) {
+        if (viewName === 'kanban') {
+          subKanban.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-white text-slate-800 shadow-sm transition';
+          subList.className = 'px-2.5 py-1 rounded-full text-xs font-medium text-slate-500 hover:text-slate-800 transition';
+        } else {
+          subList.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-white text-slate-800 shadow-sm transition';
+          subKanban.className = 'px-2.5 py-1 rounded-full text-xs font-medium text-slate-500 hover:text-slate-800 transition';
+        }
+      }
+
+      if (viewName === 'kanban' && window.innerWidth < 768) {
+        switchMobileStage(currentMobileStage);
+      }
+      renderAllViews();
+    }
+
+    let currentMobileStage = 'DRAFT';
+    function switchMobileStage(stage) {
+      currentMobileStage = stage;
+      const stages = ['DRAFT', 'INTERNAL_REVIEW', 'REJECTED', 'SENT_TO_PARTNER', 'SIGNED_ACTIVE'];
+      stages.forEach(st => {
+        const pill = document.getElementById(`mobile-pill-${st}`);
+        const colWrap = document.getElementById(`col-wrapper-${st}`);
+        if (colWrap) {
+          if (st === stage) {
+            colWrap.classList.remove('hidden');
+            colWrap.classList.add('flex');
+          } else {
+            colWrap.classList.add('hidden');
+            colWrap.classList.remove('flex');
+          }
+        }
+        if (pill) {
+          if (st === stage) {
+            pill.className = 'px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition bg-slate-900 text-white shadow-sm flex items-center gap-1.5';
+          } else {
+            pill.className = 'px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition bg-slate-100 text-slate-600 flex items-center gap-1.5';
+          }
+        }
+      });
+    }
+
+    function getFilteredContracts(includeArchived = false) {
+      const search = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+      const cat = document.getElementById('filterCategory')?.value || 'ALL';
+      const role = document.getElementById('filterPartnerRole')?.value || 'ALL';
+
+      return contracts.filter(c => {
+        if (includeArchived) {
+          if (c.status !== 'ARCHIVED') return false;
+        } else {
+          if (c.status === 'ARCHIVED') return false;
+        }
+        if (cat !== 'ALL' && c.category !== cat) return false;
+        if (role !== 'ALL' && c.partnerRole !== role) return false;
+
+        if (search) {
+          return (
+            c.code.toLowerCase().includes(search) ||
+            c.title.toLowerCase().includes(search) ||
+            c.project.toLowerCase().includes(search) ||
+            c.partner.toLowerCase().includes(search) ||
+            (c.assignee || '').toLowerCase().includes(search) ||
+            (c.filepath || '').toLowerCase().includes(search)
+          );
+        }
+        return true;
+      });
+    }
+
+    // Cập nhật Widget Thống kê bên phải (Giống "Task Completion 94%" trong ảnh mẫu)
+    function updateStats() {
+      const activeContracts = contracts.filter(c => c.status !== 'ARCHIVED');
+      const pendingSign = contracts.filter(c => c.status === 'INTERNAL_REVIEW');
+      const sentPartner = contracts.filter(c => c.status === 'SENT_TO_PARTNER');
+      const rejected = contracts.filter(c => c.status === 'REJECTED');
+      const signed = contracts.filter(c => c.status === 'SIGNED_ACTIVE');
+      const archived = contracts.filter(c => c.status === 'ARCHIVED');
+
+      const totalVal = activeContracts.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+
+      // Tính % hoàn thành/ký kết
+      const totalAll = contracts.length || 1;
+      const doneCount = signed.length + archived.length;
+      const rate = Math.round(((doneCount + sentPartner.length * 0.7 + pendingSign.length * 0.4) / totalAll) * 100);
+      const clampedRate = Math.min(100, Math.max(0, rate));
+
+      document.getElementById('stat-active-count').innerText = activeContracts.length;
+      document.getElementById('stat-pending-sign').innerText = pendingSign.length;
+      document.getElementById('stat-partner-count').innerText = sentPartner.length;
+      document.getElementById('stat-rejected-count').innerText = rejected.length;
+      document.getElementById('stat-total-value').innerText = formatShortMoney(totalVal);
+      document.getElementById('stat-completion-rate').innerText = `${clampedRate}%`;
+      document.getElementById('archive-count-badge').innerText = archived.length;
+      document.getElementById('archive-subtext').innerText = `${archived.length} Hợp đồng`;
+
+      // Render 6 chấm tròn xanh giống ảnh mẫu
+      const activeDots = Math.round((clampedRate / 100) * 6);
+      const dotsContainer = document.getElementById('completion-dots-row');
+      if (dotsContainer) {
+        let dotsHtml = '';
+        for (let i = 1; i <= 6; i++) {
+          dotsHtml += `<span class="w-3 h-3 rounded-full ${i <= activeDots ? 'bg-emerald-400' : 'bg-slate-200'} transition"></span>`;
+        }
+        dotsContainer.innerHTML = dotsHtml;
+      }
+    }
+
+    // RENDER WIDGET: VIỆC CẦN LÀM HÔM NAY
+    function renderTodayTasks() {
+      const listElem = document.getElementById('today-tasks-list');
+      const dateDisplay = document.getElementById('today-display-date');
+
+      const now = new Date();
+      dateDisplay.innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      const tasksToday = calendarTasks.filter(t => t.date === todayStr);
+      const contractsDueToday = contracts.filter(c => c.status !== 'ARCHIVED' && c.deadline === todayStr);
+
+      if (tasksToday.length === 0 && contractsDueToday.length === 0) {
+        listElem.innerHTML = `
+          <div class="py-6 text-center text-slate-400 text-xs bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
+            <i class="fa-regular fa-face-smile text-slate-300 text-lg mb-1 block"></i>
+            Không có việc gấp hôm nay
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+
+      contractsDueToday.forEach(c => {
+        html += `
+          <div onclick="openDetailModal('${c.id}')" class="p-3 rounded-2xl bg-rose-50/70 border border-rose-200/70 flex items-center justify-between gap-2 cursor-pointer hover:bg-rose-50 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="w-7 h-7 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 text-xs">
+                <i class="fa-regular fa-bell"></i>
+              </span>
+              <div class="min-w-0">
+                <div class="text-xs font-bold text-slate-800 truncate">${c.title}</div>
+                <div class="text-[11px] text-rose-600 font-medium">Hạn hôm nay • ${c.code}</div>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+          </div>
+        `;
+      });
+
+      tasksToday.forEach(t => {
+        const contractLink = t.contractId ? contracts.find(c => c.id === t.contractId) : null;
+        html += `
+          <div class="p-2.5 rounded-2xl bg-slate-50/80 hover:bg-slate-100/70 border border-slate-200/60 flex items-start justify-between gap-2 transition">
+            <div class="flex items-start space-x-2.5 flex-1 min-w-0">
+              <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTaskComplete('${t.id}')" class="mt-0.5 w-4 h-4 rounded-full text-indigo-600 focus:ring-0 cursor-pointer">
+              <div class="text-xs min-w-0 flex-1">
+                <p class="font-semibold text-slate-700 ${t.completed ? 'line-through text-slate-400 font-normal' : ''} leading-snug">${t.title}</p>
+                ${contractLink ? `<span onclick="openDetailModal('${contractLink.id}')" class="inline-block mt-1 text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium cursor-pointer hover:underline">${contractLink.code}</span>` : ''}
+              </div>
+            </div>
+            <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-rose-500 text-xs px-1">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        `;
+      });
+
+      listElem.innerHTML = html;
+    }
+
+    function toggleTaskComplete(taskId) {
+      const task = calendarTasks.find(t => t.id === taskId);
+      if (task) {
+        task.completed = !task.completed;
+        saveTasksStorage(task);
+        renderTodayTasks();
+        if (currentView === 'calendar') renderCalendarView();
+      }
+    }
+
+    function deleteTask(taskId) {
+      const idx = calendarTasks.findIndex(t => t.id === taskId);
+      if (idx !== -1) {
+        calendarTasks.splice(idx, 1);
+        saveTasksStorage();
+        if (isCloudSyncActive && firestoreDb) {
+          firestoreDb.collection('tasks').doc(taskId).delete().catch(e => {});
+        }
+        renderTodayTasks();
+        if (currentView === 'calendar') renderCalendarView();
+      }
+    }
+
+    // Chu kỳ chuyển nhanh trạng thái khi bấm vào pill trạng thái
+    const NEXT_STATUS_CYCLE = {
+      'DRAFT': 'INTERNAL_REVIEW',
+      'INTERNAL_REVIEW': 'SENT_TO_PARTNER',
+      'REJECTED': 'INTERNAL_REVIEW',
+      'SENT_TO_PARTNER': 'SIGNED_ACTIVE',
+      'SIGNED_ACTIVE': 'ARCHIVED'
+    };
+
+    // ==================== RENDER VIEW 1: BASIC MINIMALIST LIST (GIỐNG ẢNH MẪU LOOPAI) ====================
+    function renderListView() {
+      const container = document.getElementById('list-rows-container');
+      const filtered = getFilteredContracts(false);
+      container.innerHTML = '';
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-14 text-center text-slate-400">
+            <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+              <i class="fa-regular fa-folder-open text-lg"></i>
+            </div>
+            <p class="text-sm font-semibold text-slate-600">Không tìm thấy hợp đồng nào</p>
+            <p class="text-xs text-slate-400 mt-1">Thử thay đổi từ khóa tìm kiếm hoặc thêm hợp đồng mới</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(c => {
+        const catInfo = CATEGORY_MAP[c.category] || CATEGORY_MAP['KHAC'];
+        const statInfo = STATUS_MAP[c.status] || STATUS_MAP['DRAFT'];
+        const isTodayDue = c.deadline === todayStr;
+        const avatarColor = getAvatarColor(c.partner);
+        const roleDotColor = ROLE_BADGE_COLOR[c.partnerRole] || 'bg-indigo-500';
+        const nextSt = NEXT_STATUS_CYCLE[c.status] || 'DRAFT';
+
+        const row = document.createElement('div');
+        row.className = `project-row rounded-2xl border border-transparent px-3 sm:px-4 py-3.5 bg-white`;
+
+        row.innerHTML = `
+          <!-- PC Layout (md:grid-cols-12) & Mobile Card Layout -->
+          <div class="grid grid-cols-1 md:grid-cols-12 items-center gap-3 md:gap-2">
+            
+            <!-- Col 1: Avatar + Partner Name + Code (3 cols) -->
+            <div class="md:col-span-3 flex items-center justify-between md:justify-start space-x-3 min-w-0">
+              <div class="flex items-center space-x-3 min-w-0">
+                <input type="checkbox" onclick="event.stopPropagation()" class="hidden md:inline-block w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-0 cursor-pointer shrink-0">
+                
+                <!-- Avatar tròn kèm chấm tròn góc trên giống ảnh mẫu -->
+                <div onclick="openDetailModal('${c.id}')" class="relative w-10 h-10 rounded-full ${avatarColor} font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer">
+                  <span>${getInitials(c.partner)}</span>
+                  <span class="absolute -top-0.5 -left-0.5 w-3.5 h-3.5 rounded-full ${roleDotColor} ring-2 ring-white flex items-center justify-center text-[8px] text-white" title="${PARTNER_ROLE_MAP[c.partnerRole] || ''}">
+                    <i class="fa-solid ${catInfo.icon}"></i>
+                  </span>
+                </div>
+
+                <div class="min-w-0 cursor-pointer" onclick="openDetailModal('${c.id}')">
+                  <div class="font-bold text-slate-900 text-xs sm:text-sm truncate">${c.partner}</div>
+                  <div class="text-[11px] text-slate-400 truncate">@${c.code}</div>
+                </div>
+              </div>
+
+              <!-- Mobile-only Status Pill on Top Right -->
+              <div class="md:hidden shrink-0">
+                <button onclick="changeStatus('${c.id}', '${nextSt}')" class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${statInfo.pillClass}">
+                  ${statInfo.iconHtml}
+                  <span>${statInfo.shortLabel}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Col 2: Contract Title & Project Subtitle (4 cols) -->
+            <div class="md:col-span-4 min-w-0 cursor-pointer pl-12 md:pl-0 -mt-1.5 md:mt-0" onclick="openDetailModal('${c.id}')">
+              <div class="font-bold text-slate-800 text-xs sm:text-sm truncate hover:text-indigo-600 transition">${c.title}</div>
+              <div class="text-[11px] text-slate-400 truncate mt-0.5">${c.project} • <span class="text-slate-500 font-medium">${catInfo.label}</span></div>
+            </div>
+
+            <!-- Col 3: Note / Filepath Icon (1 col - PC) -->
+            <div class="hidden md:flex md:col-span-1 items-center justify-center">
+              ${c.filepath ? `
+                <button onclick="copyToClipboard('${c.filepath.replace(/\\/g, '\\\\')}')" class="relative w-8 h-8 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 flex items-center justify-center transition" title="Sao chép đường dẫn: ${c.filepath}">
+                  <i class="fa-regular fa-file-lines text-xs"></i>
+                  <span class=" -bottom-0.5 -right-0.5 absolute w-3.5 h-3.5 rounded-full bg-indigo-500 text-white text-[8px] flex items-center justify-center">✓</span>
+                </button>
+              ` : `
+                <button onclick="openDetailModal('${c.id}')" class="w-8 h-8 rounded-xl hover:bg-slate-100 text-slate-400 flex items-center justify-center transition" title="${c.notes || 'Xem chi tiết'}">
+                  <i class="fa-regular fa-file-lines text-xs"></i>
+                </button>
+              `}
+            </div>
+
+            <!-- Col 4: Due Date (1 col - PC) -->
+            <div class="hidden md:block md:col-span-1 text-center">
+              <span class="text-xs font-medium ${isTodayDue ? 'text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-full' : 'text-slate-500'}">
+                ${formatShortDate(c.deadline)}
+              </span>
+            </div>
+
+            <!-- Col 5: Price / Value (1 col - PC) -->
+            <div class="hidden md:block md:col-span-1 text-right pr-2">
+              <span class="text-xs sm:text-sm font-extrabold text-slate-900" title="${formatMoney(c.value)}">
+                ${formatShortMoney(c.value)}
+              </span>
+            </div>
+
+            <!-- Col 6: Status Pill + Three-dots Action (2 cols - PC) -->
+            <div class="hidden md:flex md:col-span-2 items-center justify-between pl-3">
+              <button onclick="changeStatus('${c.id}', '${nextSt}')" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statInfo.pillClass} hover:opacity-85 transition" title="Bấm để chuyển nhanh sang bước kế tiếp">
+                ${statInfo.iconHtml}
+                <span>${statInfo.shortLabel}</span>
+              </button>
+
+              <div class="flex items-center space-x-1">
+                <button onclick="openModalEdit('${c.id}')" class="w-7 h-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition" title="Chỉnh sửa">
+                  <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mobile Bottom Bar (Value + Due Date + Quick Actions) -->
+            <div class="flex md:hidden items-center justify-between pl-12 pt-1 text-xs border-t border-slate-50">
+              <div class="flex items-center space-x-3">
+                <span class="font-extrabold text-slate-900">${formatShortMoney(c.value)}</span>
+                <span class="text-[11px] ${isTodayDue ? 'text-rose-600 font-bold' : 'text-slate-400'}">
+                  <i class="fa-regular fa-calendar mr-1"></i>${formatShortDate(c.deadline)}
+                </span>
+              </div>
+              <div class="flex items-center space-x-1">
+                ${c.filepath ? `
+                  <button onclick="copyToClipboard('${c.filepath.replace(/\\/g, '\\\\')}')" class="p-1.5 text-slate-400 hover:text-indigo-600" title="Copy đường dẫn file">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                ` : ''}
+                <button onclick="openModalEdit('${c.id}')" class="p-1.5 text-slate-400 hover:text-slate-700" title="Sửa">
+                  <i class="fa-solid fa-pen text-[11px]"></i>
+                </button>
+                <button onclick="openDetailModal('${c.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600" title="Chi tiết">
+                  <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // ==================== RENDER VIEW 2: KANBAN BOARD ====================
+    function renderKanban() {
+      const pipelineStatuses = ['DRAFT', 'INTERNAL_REVIEW', 'REJECTED', 'SENT_TO_PARTNER', 'SIGNED_ACTIVE'];
+      const filtered = getFilteredContracts(false);
+
+      pipelineStatuses.forEach(st => {
+        const colContainer = document.getElementById(`col-${st}`);
+        const badgeElem = document.getElementById(`badge-col-${st}`);
+        const items = filtered.filter(c => c.status === st);
+
+        if (badgeElem) badgeElem.innerText = items.length;
+        const mobBadge = document.getElementById(`mobile-badge-${st}`);
+        if (mobBadge) mobBadge.innerText = items.length;
+        if (!colContainer) return;
+        colContainer.innerHTML = '';
+
+        if (items.length === 0) {
+          colContainer.innerHTML = `
+            <div class="h-24 border border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center text-slate-300 text-xs">
+              <span>Trống</span>
+            </div>
+          `;
+          return;
+        }
+
+        items.forEach(c => {
+          const catInfo = CATEGORY_MAP[c.category] || CATEGORY_MAP['KHAC'];
+          const isTodayDue = c.deadline === todayStr;
+
+          const card = document.createElement('div');
+          card.draggable = true;
+          card.ondragstart = (e) => handleDragStart(e, c.id);
+          card.className = `bg-white p-3.5 rounded-2xl border ${isTodayDue ? 'border-rose-300' : 'border-slate-200/80'} shadow-sm hover:shadow-md transition cursor-grab active:cursor-grabbing select-none`;
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between gap-1 mb-2">
+              <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">${c.code}</span>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${catInfo.softBg}">${catInfo.label}</span>
+            </div>
+
+            <h4 onclick="openDetailModal('${c.id}')" class="text-xs sm:text-sm font-bold text-slate-900 leading-snug hover:text-indigo-600 cursor-pointer">${c.title}</h4>
+            <p class="text-[11px] text-slate-400 truncate mt-1">${c.partner}</p>
+
+            <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-xs">
+              <span class="font-extrabold text-slate-800">${formatShortMoney(c.value)}</span>
+              <div class="flex items-center space-x-1">
+                ${renderQuickStatusButtons(c)}
+              </div>
+            </div>
+          `;
+          colContainer.appendChild(card);
+        });
+      });
+    }
+
+    function renderQuickStatusButtons(contract) {
+      if (contract.status === 'DRAFT') {
+        return `<button onclick="changeStatus('${contract.id}', 'INTERNAL_REVIEW')" class="px-2.5 py-1 rounded-full bg-amber-100/80 hover:bg-amber-200 text-amber-800 text-[10px] font-bold">Trình ký →</button>`;
+      } else if (contract.status === 'INTERNAL_REVIEW') {
+        return `
+          <button onclick="changeStatus('${contract.id}', 'REJECTED')" class="px-2 py-1 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-bold">Trả về</button>
+          <button onclick="changeStatus('${contract.id}', 'SENT_TO_PARTNER')" class="px-2.5 py-1 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-800 text-[10px] font-bold">Gửi CĐT →</button>
+        `;
+      } else if (contract.status === 'REJECTED') {
+        return `<button onclick="changeStatus('${contract.id}', 'INTERNAL_REVIEW')" class="px-2.5 py-1 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-bold">Trình lại →</button>`;
+      } else if (contract.status === 'SENT_TO_PARTNER') {
+        return `<button onclick="changeStatus('${contract.id}', 'SIGNED_ACTIVE')" class="px-2.5 py-1 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[10px] font-bold">Đã ký ✓</button>`;
+      } else if (contract.status === 'SIGNED_ACTIVE') {
+        return `<button onclick="changeStatus('${contract.id}', 'ARCHIVED')" class="px-2.5 py-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-800 text-[10px] font-bold">Lưu kho</button>`;
+      }
+      return '';
+    }
+
+    // ==================== RENDER VIEW 4: ARCHIVE (KHO LƯU TRỮ) ====================
+    function renderArchiveView() {
+      const container = document.getElementById('archive-rows-container');
+      const archivedContracts = getFilteredContracts(true);
+      container.innerHTML = '';
+
+      if (archivedContracts.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-400 text-xs">
+            Chưa có hợp đồng nào trong kho lưu trữ.
+          </div>
+        `;
+        return;
+      }
+
+      archivedContracts.forEach(c => {
+        const avatarColor = getAvatarColor(c.partner);
+        const div = document.createElement('div');
+        div.className = 'project-row rounded-2xl px-4 py-3.5 bg-white flex flex-col md:flex-row md:items-center justify-between gap-3';
+        div.innerHTML = `
+          <div class="flex items-center space-x-3 min-w-0 flex-1">
+            <div class="w-10 h-10 rounded-full ${avatarColor} font-bold text-xs flex items-center justify-center shrink-0">
+              ${getInitials(c.partner)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-slate-800 text-sm truncate cursor-pointer hover:text-indigo-600" onclick="openDetailModal('${c.id}')">${c.title}</div>
+              <div class="text-xs text-slate-400 truncate">${c.partner} • @${c.code} • ${formatShortMoney(c.value)}</div>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <input type="text" value="${c.filepath || ''}" placeholder="Đường dẫn file trên máy..." 
+              onchange="updateContractFilePath('${c.id}', this.value)"
+              class="text-xs font-mono px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full w-48 sm:w-64 focus:outline-none focus:border-indigo-400">
+            <button onclick="copyToClipboard('${(c.filepath || '').replace(/\\/g, '\\\\')}')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs" title="Sao chép đường dẫn">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+            <button onclick="restoreFromArchive('${c.id}')" class="w-8 h-8 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center text-xs" title="Khôi phục">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <button onclick="deleteContractPermanently('${c.id}')" class="w-8 h-8 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center text-xs" title="Xóa vĩnh viễn">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function updateContractFilePath(id, newPath) {
+      const c = contracts.find(item => item.id === id);
+      if (c) {
+        c.filepath = newPath.trim();
+        saveStorage(c);
+        showToast(`Đã lưu đường dẫn file cho ${c.code}`, 'success');
+      }
+    }
+
+    // ==================== RENDER VIEW 3: CALENDAR ====================
+    function changeCalendarMonth(offset) {
+      currentCalDate.setMonth(currentCalDate.getMonth() + offset);
+      renderCalendarView();
+    }
+
+    function jumpToTodayCalendar() {
+      currentCalDate = new Date();
+      selectedCalDayStr = todayStr;
+      renderCalendarView();
+    }
+
+    function selectCalendarDate(dateStr) {
+      selectedCalDayStr = dateStr;
+      renderCalendarView();
+    }
+
+    function renderCalendarView() {
+      const monthYearElem = document.getElementById('calendar-month-year');
+      const gridElem = document.getElementById('calendar-days-grid');
+      const selectedTitle = document.getElementById('selected-date-title');
+      const selectedTasksElem = document.getElementById('selected-date-tasks');
+
+      const year = currentCalDate.getFullYear();
+      const month = currentCalDate.getMonth();
+      monthYearElem.innerText = `Tháng ${month + 1}, ${year}`;
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const lastDayDate = new Date(year, month + 1, 0).getDate();
+      const prevMonthLastDate = new Date(year, month, 0).getDate();
+
+      gridElem.innerHTML = '';
+
+      for (let i = firstDayIndex; i > 0; i--) {
+        const d = prevMonthLastDate - i + 1;
+        const cell = document.createElement('div');
+        cell.className = 'h-14 sm:h-16 p-1.5 rounded-2xl bg-white/40 text-slate-300 text-xs';
+        cell.innerHTML = `<span>${d}</span>`;
+        gridElem.appendChild(cell);
+      }
+
+      for (let d = 1; d <= lastDayDate; d++) {
+        const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isToday = dayStr === todayStr;
+        const isSelected = dayStr === selectedCalDayStr;
+
+        const dayTasks = calendarTasks.filter(t => t.date === dayStr);
+        const dayContracts = contracts.filter(c => c.status !== 'ARCHIVED' && c.deadline === dayStr);
+        const totalCount = dayTasks.length + dayContracts.length;
+
+        const cell = document.createElement('div');
+        cell.onclick = () => selectCalendarDate(dayStr);
+        cell.className = `h-14 sm:h-16 p-1.5 rounded-2xl border text-xs flex flex-col justify-between cursor-pointer transition ${
+          isSelected
+            ? 'border-indigo-500 bg-indigo-50/70 shadow-sm'
+            : isToday
+              ? 'border-amber-400 bg-amber-50/50'
+              : 'border-slate-200/60 bg-white hover:bg-slate-50'
+        }`;
+
+        cell.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-bold ${isToday ? 'text-amber-600' : isSelected ? 'text-indigo-600' : 'text-slate-700'}">${d}</span>
+            ${totalCount > 0 ? `<span class="w-2 h-2 rounded-full ${dayContracts.length > 0 ? 'bg-rose-500' : 'bg-indigo-500'}"></span>` : ''}
+          </div>
+          ${totalCount > 0 ? `<div class="text-[10px] text-slate-500 font-medium truncate">${totalCount} mục</div>` : '<div></div>'}
+        `;
+        gridElem.appendChild(cell);
+      }
+
+      const dateParts = selectedCalDayStr.split('-');
+      selectedTitle.innerText = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+      const selectedDayTasks = calendarTasks.filter(t => t.date === selectedCalDayStr);
+      const selectedDayContracts = contracts.filter(c => c.status !== 'ARCHIVED' && c.deadline === selectedCalDayStr);
+
+      if (selectedDayTasks.length === 0 && selectedDayContracts.length === 0) {
+        selectedTasksElem.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">Chưa có lịch trình cho ngày này.</div>`;
+        return;
+      }
+
+      let html = '';
+      selectedDayContracts.forEach(c => {
+        html += `
+          <div onclick="openDetailModal('${c.id}')" class="p-3 rounded-2xl bg-rose-50 border border-rose-200/70 text-xs cursor-pointer">
+            <div class="font-bold text-rose-700">${c.code}</div>
+            <div class="font-semibold text-slate-800 mt-0.5">${c.title}</div>
+          </div>
+        `;
+      });
+
+      selectedDayTasks.forEach(t => {
+        html += `
+          <div class="p-3 rounded-2xl bg-white border border-slate-200/70 text-xs flex items-start justify-between gap-2">
+            <div class="flex items-start space-x-2">
+              <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTaskComplete('${t.id}')" class="mt-0.5 w-4 h-4 rounded-full text-indigo-600">
+              <span class="${t.completed ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}">${t.title}</span>
+            </div>
+            <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        `;
+      });
+
+      selectedTasksElem.innerHTML = html;
+    }
+
+    function openAddQuickTaskModal() { openTaskModal(todayStr); }
+    function openAddTaskModalForSelectedDate() { openTaskModal(selectedCalDayStr); }
+
+    function openTaskModal(dateStr) {
+      document.getElementById('taskForm').reset();
+      document.getElementById('task-form-date').value = dateStr || todayStr;
+      const sel = document.getElementById('task-form-contract-id');
+      sel.innerHTML = '<option value="">-- Không chọn --</option>';
+      contracts.filter(c => c.status !== 'ARCHIVED').forEach(c => {
+        sel.innerHTML += `<option value="${c.id}">${c.code} - ${c.title.substring(0, 32)}...</option>`;
+      });
+      document.getElementById('taskModal').classList.remove('hidden');
+    }
+
+    function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); }
+
+    function handleTaskSubmit(e) {
+      e.preventDefault();
+      const newTask = {
+        id: 'task-' + Date.now(),
+        date: document.getElementById('task-form-date').value,
+        title: document.getElementById('task-form-title').value.trim(),
+        contractId: document.getElementById('task-form-contract-id').value,
+        priority: document.getElementById('task-form-priority').value,
+        completed: false
+      };
+      calendarTasks.unshift(newTask);
+      saveTasksStorage(newTask);
+      closeTaskModal();
+      renderTodayTasks();
+      if (currentView === 'calendar') renderCalendarView();
+      showToast('Đã thêm việc cần làm', 'success');
+    }
+
+    function renderAllViews() {
+      updateStats();
+      renderTodayTasks();
+      if (currentView === 'list') renderListView();
+      if (currentView === 'kanban') renderKanban();
+      if (currentView === 'calendar') renderCalendarView();
+      if (currentView === 'archive') renderArchiveView();
+    }
+
+    // Drag & Drop
+    let draggedContractId = null;
+    function handleDragStart(e, id) { draggedContractId = id; e.dataTransfer.setData('text/plain', id); }
+    function handleDragOver(e) { e.preventDefault(); }
+    function handleDrop(e, newStatus) {
+      e.preventDefault();
+      if (!draggedContractId) return;
+      changeStatus(draggedContractId, newStatus);
+      draggedContractId = null;
+    }
+
+    function changeStatus(id, newStatus) {
+      const contract = contracts.find(c => c.id === id);
+      if (!contract || contract.status === newStatus) return;
+
+      contract.status = newStatus;
+      const statusTitle = STATUS_MAP[newStatus]?.label || newStatus;
+      const now = new Date();
+      const timestamp = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+      if (!contract.history) contract.history = [];
+      contract.history.push({ time: timestamp, text: `Chuyển sang trạng thái: ${statusTitle}` });
+
+      saveStorage(contract);
+      renderAllViews();
+      showToast(`${contract.code} → ${statusTitle}`, 'success');
+
+      if (!document.getElementById('detailModal').classList.contains('hidden')) {
+        openDetailModal(id);
+      }
+    }
+
+    function openModalCreate() {
+      document.getElementById('form-contract-id').value = '';
+      document.getElementById('contractForm').reset();
+      document.getElementById('modalTitle').innerText = 'Thêm Hợp Đồng Mới';
+      document.getElementById('form-status').value = 'DRAFT';
+      document.getElementById('form-category').value = 'THI_CONG';
+      document.getElementById('contractModal').classList.remove('hidden');
+    }
+
+    function openModalEdit(id) {
+      const c = contracts.find(item => item.id === id);
+      if (!c) return;
+      document.getElementById('form-contract-id').value = c.id;
+      document.getElementById('modalTitle').innerText = `Sửa Hợp Đồng: ${c.code}`;
+      document.getElementById('form-code').value = c.code;
+      document.getElementById('form-project').value = c.project;
+      document.getElementById('form-title').value = c.title;
+      document.getElementById('form-category').value = c.category;
+      document.getElementById('form-status').value = c.status;
+      document.getElementById('form-partner').value = c.partner;
+      document.getElementById('form-partnerRole').value = c.partnerRole;
+      document.getElementById('form-value').value = c.value ?? '';
+      document.getElementById('form-deadline').value = c.deadline || '';
+      document.getElementById('form-assignee').value = c.assignee || '';
+      document.getElementById('form-attachment').value = c.attachment || '';
+      document.getElementById('form-filepath').value = c.filepath || '';
+      document.getElementById('form-notes').value = c.notes || '';
+      document.getElementById('contractModal').classList.remove('hidden');
+    }
+
+    function closeModal() { document.getElementById('contractModal').classList.add('hidden'); }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('form-contract-id').value;
+      const code = document.getElementById('form-code').value.trim();
+      const project = document.getElementById('form-project').value.trim();
+      const title = document.getElementById('form-title').value.trim();
+      const category = document.getElementById('form-category').value;
+      const status = document.getElementById('form-status').value;
+      const partner = document.getElementById('form-partner').value.trim();
+      const partnerRole = document.getElementById('form-partnerRole').value;
+      const rawVal = document.getElementById('form-value').value;
+      const value = rawVal !== '' ? parseFloat(rawVal) : 0;
+      const deadline = document.getElementById('form-deadline').value;
+      const assignee = document.getElementById('form-assignee').value.trim();
+      const attachment = document.getElementById('form-attachment').value.trim();
+      const filepath = document.getElementById('form-filepath').value.trim();
+      const notes = document.getElementById('form-notes').value.trim();
+
+      const now = new Date();
+      const timestamp = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+      if (id) {
+        const c = contracts.find(item => item.id === id);
+        if (c) {
+          c.code = code; c.project = project; c.title = title; c.category = category;
+          c.status = status; c.partner = partner; c.partnerRole = partnerRole;
+          c.value = value; c.deadline = deadline; c.assignee = assignee;
+          c.attachment = attachment; c.filepath = filepath; c.notes = notes;
+          c.history.push({ time: timestamp, text: `Cập nhật thông tin hợp đồng.` });
+          saveStorage(c);
+        }
+        showToast(`Đã cập nhật ${code}`, 'success');
+      } else {
+        const newContract = {
+          id: 'hd-' + Date.now(),
+          code, project, title, category, status, partner, partnerRole,
+          value, deadline, assignee, attachment, filepath, notes,
+          createdAt: now.toISOString().split('T')[0],
+          history: [{ time: timestamp, text: `Khởi tạo hợp đồng mới.` }]
+        };
+        contracts.unshift(newContract);
+        saveStorage(newContract);
+        showToast(`Đã thêm hợp đồng ${code}`, 'success');
+      }
+      closeModal();
+      renderAllViews();
+    }
+
+    function openDetailModal(id) {
+      const c = contracts.find(item => item.id === id);
+      if (!c) return;
+      const catInfo = CATEGORY_MAP[c.category] || CATEGORY_MAP['KHAC'];
+      const statInfo = STATUS_MAP[c.status] || STATUS_MAP['DRAFT'];
+
+      document.getElementById('detail-code-badge').innerText = c.code;
+      document.getElementById('detail-title').innerText = c.title;
+
+      const detailContent = document.getElementById('detail-content');
+      detailContent.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <div>
+            <span class="text-[11px] text-slate-400 block mb-1">Trạng thái</span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statInfo.pillClass}">
+              ${statInfo.iconHtml}${statInfo.label}
+            </span>
+          </div>
+          <div>
+            <span class="text-[11px] text-slate-400 block mb-1">Hạng mục</span>
+            <span class="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border ${catInfo.softBg}">
+              ${catInfo.fullLabel}
+            </span>
+          </div>
+          <div>
+            <span class="text-[11px] text-slate-400 block mb-1">Giá trị hợp đồng</span>
+            <span class="text-base font-extrabold text-slate-900">${formatMoney(c.value)}</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="p-3.5 rounded-2xl border border-slate-100 space-y-1.5">
+            <div><span class="text-slate-400">Dự án:</span> <strong class="text-slate-800 block">${c.project}</strong></div>
+            <div><span class="text-slate-400">Đối tác:</span> <strong class="text-slate-800 block">${c.partner} (${PARTNER_ROLE_MAP[c.partnerRole]})</strong></div>
+            <div><span class="text-slate-400">Hạn xử lý:</span> <strong class="text-slate-800">${c.deadline || 'Chưa gán'}</strong></div>
+          </div>
+          <div class="p-3.5 rounded-2xl border border-slate-100 space-y-1.5">
+            <div><span class="text-slate-400">Phụ trách:</span> <strong class="text-slate-800 block">${c.assignee || 'Chưa gán'}</strong></div>
+            <div><span class="text-slate-400">Hồ sơ bản cứng:</span> <strong class="text-slate-800 block">${c.attachment || 'Chưa gán'}</strong></div>
+            <div><span class="text-slate-400">Ngày tạo:</span> <strong class="text-slate-800">${c.createdAt || '--'}</strong></div>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs">
+          <span class="font-bold text-slate-600 block mb-1.5">Đường dẫn file trên máy tính:</span>
+          <div class="flex items-center gap-2">
+            <span class="font-mono bg-white border border-slate-200 px-3 py-2 rounded-xl flex-1 text-slate-700 break-all select-all">${c.filepath || 'Chưa lưu đường dẫn'}</span>
+            ${c.filepath ? `
+              <button onclick="copyToClipboard('${c.filepath.replace(/\\/g, '\\\\')}')" class="px-3.5 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 font-semibold shrink-0">
+                Copy
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        ${c.notes ? `
+          <div class="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200/60 text-xs">
+            <span class="font-bold text-amber-900 block mb-1">Ghi chú:</span>
+            <p class="text-amber-800 whitespace-pre-wrap">${c.notes}</p>
+          </div>
+        ` : ''}
+
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+          <span class="text-xs font-bold text-slate-600 block mb-2">Đổi nhanh trạng thái:</span>
+          <div class="flex flex-wrap gap-1.5">
+            <button onclick="changeStatus('${c.id}', 'DRAFT')" class="text-xs px-3 py-1.5 rounded-full border ${c.status === 'DRAFT' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white border-slate-200 text-slate-600'}">1. Soạn thảo</button>
+            <button onclick="changeStatus('${c.id}', 'INTERNAL_REVIEW')" class="text-xs px-3 py-1.5 rounded-full border ${c.status === 'INTERNAL_REVIEW' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white border-slate-200 text-slate-600'}">2. Trình ký</button>
+            <button onclick="changeStatus('${c.id}', 'REJECTED')" class="text-xs px-3 py-1.5 rounded-full border ${c.status === 'REJECTED' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white border-slate-200 text-slate-600'}">3. Trả về</button>
+            <button onclick="changeStatus('${c.id}', 'SENT_TO_PARTNER')" class="text-xs px-3 py-1.5 rounded-full border ${c.status === 'SENT_TO_PARTNER' ? 'bg-sky-500 text-white border-sky-500' : 'bg-white border-slate-200 text-slate-600'}">4. Gửi CĐT</button>
+            <button onclick="changeStatus('${c.id}', 'SIGNED_ACTIVE')" class="text-xs px-3 py-1.5 rounded-full border ${c.status === 'SIGNED_ACTIVE' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white border-slate-200 text-slate-600'}">5. Đã ký</button>
+            <button onclick="changeStatus('${c.id}', 'ARCHIVED')" class="text-xs px-3 py-1.5 rounded-full border ${c.status === 'ARCHIVED' ? 'bg-purple-500 text-white border-purple-500' : 'bg-white border-slate-200 text-slate-600'}">Lưu trữ</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('detail-actions-left').innerHTML = `
+        <div class="flex items-center space-x-2">
+          <button onclick="closeDetailModal(); openModalEdit('${c.id}')" class="px-4 py-2 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-full transition">
+            Chỉnh sửa
+          </button>
+          <button onclick="deleteContractPermanently('${c.id}')" class="px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-50 rounded-full transition">
+            Xóa
+          </button>
+        </div>
+      `;
+
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
+
+    function restoreFromArchive(id) {
+      changeStatus(id, 'SIGNED_ACTIVE');
+    }
+
+    function deleteContractPermanently(id) {
+      const idx = contracts.findIndex(item => item.id === id);
+      if (idx !== -1) {
+        const code = contracts[idx].code;
+        contracts.splice(idx, 1);
+        saveStorage();
+        if (isCloudSyncActive && firestoreDb) {
+          firestoreDb.collection('contracts').doc(id).delete().catch(e => {});
+        }
+        renderAllViews();
+        closeDetailModal();
+        showToast(`Đã xóa hợp đồng ${code}`, 'info');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      let icon = 'fa-circle-info text-indigo-400';
+      if (type === 'success') icon = 'fa-circle-check text-emerald-400';
+      if (type === 'error') icon = 'fa-circle-exclamation text-rose-400';
+
+      toast.className = `pointer-events-auto bg-slate-900/95 backdrop-blur text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg flex items-center space-x-2 transition duration-200`;
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 250);
+      }, 2800);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initStorage();
+      switchView('list');
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 768) {
+        ['DRAFT', 'INTERNAL_REVIEW', 'REJECTED', 'SENT_TO_PARTNER', 'SIGNED_ACTIVE'].forEach(st => {
+          const colWrap = document.getElementById(`col-wrapper-${st}`);
+          if (colWrap) {
+            colWrap.classList.remove('hidden');
+            colWrap.classList.add('flex');
+          }
+        });
+      } else if (currentView === 'kanban') {
+        switchMobileStage(currentMobileStage);
+      }
+    });
+  </script>
 </body>
 </html>
